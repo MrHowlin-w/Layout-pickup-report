@@ -1,0 +1,1294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,interactive-widget=resizes-content"/>
+<title>S³ Layout / Pick-Up Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Saira:wght@300;400;500;600;700;800&family=Saira+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#060d14;--panel:#0b1622;--panel2:#0f1e2e;
+  --muted:#3a5a6e;--muted2:#6a9ab0;--accent:#c8f0ea;--accent2:#00e5c8;
+  --border:#0e2030;--border2:#1a3a52;--text:#c8e8e4;
+  --normal:#00b4d8;--jump:#f0883e;--skip:#ff6b6b;--validated:#00d4a0;
+  --s3-cyan:#00e5c8;--s3-teal:#00b4d8;
+  --header-h:46px;--bottomnav-h:56px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:'Saira',system-ui,sans-serif;font-size:13px;overflow:hidden;max-width:100vw;}
+
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;padding:0 10px 0 0;background:linear-gradient(90deg,#061220 0%,#0d1520 100%);border-bottom:1px solid var(--border2);flex-shrink:0;position:relative;gap:8px;height:var(--header-h);}
+.header-logo{flex-shrink:0;height:100%;display:flex;align-items:center;padding:4px 6px 4px 8px;}
+.pills{display:flex;gap:4px;align-items:center;}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(0,229,200,.06);border:1px solid rgba(0,229,200,.18);border-radius:5px;font-size:11px;font-weight:700;font-family:'Saira Condensed',sans-serif;letter-spacing:.3px;transition:all .15s;}
+.pill:hover{border-color:rgba(0,229,200,.4);background:rgba(0,229,200,.1);}
+
+/* LAYOUT */
+.main{display:flex;flex-direction:row;height:calc(100vh - var(--header-h));overflow:hidden;position:relative;}
+.panel{width:360px;min-width:0;max-width:360px;flex-shrink:0;flex-grow:0;height:100%;overflow:hidden;display:flex;flex-direction:column;background:var(--panel);border-right:1px solid rgba(0,229,200,.15);position:relative;}
+.tabnav{display:flex;padding:6px 4px 0;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;gap:0;scrollbar-width:none;}.tabnav::-webkit-scrollbar{display:none;}
+.tabnav button{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'Saira Condensed',sans-serif;letter-spacing:.5px;text-transform:uppercase;transition:all .15s;border-radius:4px 4px 0 0;margin-bottom:-1px;}
+.tabnav button.active{color:var(--s3-cyan);border-bottom-color:var(--s3-cyan);text-shadow:0 0 12px rgba(0,229,200,.5);}
+.tabnav button:hover:not(.active){color:var(--muted2);background:rgba(0,229,200,.05);}
+.tabcontent{flex:1;overflow:hidden;position:relative;}
+.tabtrack{display:flex;height:100%;transition:transform .26s cubic-bezier(.4,0,.2,1);will-change:transform;}
+.tab{flex:0 0 360px;width:360px;min-width:360px;height:100%;overflow-y:auto;overflow-x:hidden;padding:14px;box-sizing:border-box;}
+
+/* MAP */
+.mapwrap{position:relative;overflow:hidden;flex:1;min-width:0;transition:flex-basis .3s ease,min-width .3s ease;}
+.mapwrap.collapsed{flex:0 0 0px!important;min-width:0!important;}
+.map-toggle-btn{position:absolute;bottom:0;left:50%;transform:translateX(-50%);z-index:600;width:56px;height:18px;background:var(--panel2);border:1px solid rgba(0,229,200,.3);border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;transition:background .2s;}
+.map-toggle-btn:hover{background:rgba(0,229,200,.12);}
+.map-toggle-btn .hb{width:20px;height:2px;border-radius:2px;background:rgba(0,229,200,.5);}
+#map{position:absolute;inset:0;}
+.mobile-bottomnav{display:none;}
+
+/* SECTIONS */
+.sec{border:1px solid var(--border2);border-left:2px solid rgba(0,229,200,.25);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--panel2);}
+.sec h3{margin:0 0 10px;font-size:11px;color:var(--s3-cyan);letter-spacing:1.8px;font-weight:800;text-transform:uppercase;font-family:'Saira Condensed',sans-serif;}
+label{font-size:11px;color:var(--muted2);font-weight:700;font-family:'Saira',sans-serif;letter-spacing:.3px;}
+.row{display:flex;gap:8px;align-items:center;}
+.col{display:flex;flex-direction:column;gap:6px;}
+
+/* INPUTS */
+input[type="text"],input[type="date"],input[type="time"],select,textarea{box-sizing:border-box;background:var(--bg);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:8px 10px;outline:none;font-size:12px;width:100%;max-width:100%;font-family:'Saira',sans-serif;transition:border-color .15s;color-scheme:dark;}
+input[type="time"]::-webkit-calendar-picker-indicator,input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(0.7) sepia(1) saturate(3) hue-rotate(150deg);cursor:pointer;opacity:.7;}
+input:focus,select:focus,textarea:focus{border-color:var(--s3-teal);box-shadow:0 0 0 2px rgba(0,180,216,.15);}
+textarea{min-height:60px;resize:vertical;}
+
+/* BUTTONS */
+button{cursor:pointer;font-weight:600;font-size:12px;border-radius:6px;padding:7px 12px;border:1px solid var(--border2);background:var(--panel2);color:var(--text);font-family:'Saira',sans-serif;transition:all .15s;}
+button:hover{border-color:rgba(0,212,184,.4);background:#0d1e2e;}
+button.primary{background:linear-gradient(135deg,#008a7a,#00b4a0);border-color:#00d4b8;color:#fff;}
+button.primary:hover{background:linear-gradient(135deg,#00a090,#00c4b0);}
+button.ghost{background:transparent;border:1px solid var(--border2);}
+button.danger{background:transparent;border:1px solid #6e1a1a;color:var(--skip);}
+button.danger:hover{background:#2d0e0e;}
+button:disabled{opacity:.35;cursor:not-allowed;}
+
+/* PROD FIELD */
+.prod-field{display:flex;flex-direction:column;gap:4px;margin-bottom:8px;}
+.prod-field label{font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);font-weight:700;font-family:'Saira Condensed',sans-serif;}
+
+/* COLLAPSIBLE */
+.sec-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;margin:-12px -12px 0;padding:10px 12px;border-radius:9px 9px 0 0;}
+.sec-header:hover{background:rgba(0,212,184,.05);}
+.sec-header h3{margin:0;}
+.sec-chevron{font-size:10px;color:var(--muted);transition:transform .25s ease;display:inline-block;line-height:1;}
+.sec-body{overflow:hidden;transition:max-height .35s ease,opacity .25s ease;max-height:2000px;opacity:1;}
+.sec-body.collapsed{max-height:0!important;opacity:0;}
+.sec.collapsed .sec-header{border-radius:9px;margin-bottom:-12px;}
+.sec.collapsed .sec-chevron{transform:rotate(-90deg);}
+
+/* SEPARATORS */
+.sep{display:flex;align-items:center;gap:8px;margin:12px 0;flex-shrink:0;}
+.sep-line{flex:1;height:1px;background:linear-gradient(90deg,rgba(0,229,200,.3),rgba(0,229,200,.04));}
+.sep-line-rev{flex:1;height:1px;background:linear-gradient(90deg,rgba(0,229,200,.04),rgba(0,229,200,.3));}
+.sep-label{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--s3-teal);font-family:'Saira Condensed',sans-serif;white-space:nowrap;opacity:.8;}
+
+/* STATUS BUTTONS */
+.status-btns{display:flex;gap:6px;margin:4px 0;}
+.sbtn{flex:1;padding:9px 4px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--muted2);cursor:pointer;font-size:11px;font-weight:700;text-align:center;transition:all .12s;font-family:'Saira',sans-serif;-webkit-tap-highlight-color:transparent;}
+.sbtn:hover{border-color:var(--border2);color:var(--text);}
+.sbtn.sn{background:var(--bg);border-color:var(--validated);color:var(--validated);}
+.sbtn.sj{background:#2d1e08;border-color:var(--jump);color:var(--jump);}
+.sbtn.ss{background:var(--bg);border-color:var(--skip);color:var(--skip);}
+.sbtn.stodo{background:var(--bg);border-color:var(--normal);color:var(--normal);}
+
+/* REASON LIST */
+.reason-list{border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:150px;overflow-y:auto;margin-top:4px;}
+.ri{padding:8px 12px;border-bottom:1px solid var(--border);cursor:pointer;font-size:11px;color:var(--muted2);}
+.ri:last-child{border-bottom:none;}
+.ri:hover{background:#1a2530;color:var(--text);}
+.ri.sel{background:var(--bg);color:var(--validated);font-weight:600;}
+
+/* DROP */
+.drop{border:1px dashed var(--border2);border-radius:10px;padding:14px;background:var(--bg);}
+.hint{font-size:11px;color:var(--muted);line-height:1.5;}
+
+/* LINE LIST */
+.line-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-bottom:4px;cursor:pointer;transition:border-color .15s,background .15s;}
+.line-row:hover{border-color:var(--s3-teal);background:rgba(0,229,200,.04);}
+.line-row.active{border-color:var(--s3-cyan);background:rgba(0,229,200,.07);}
+.line-name{font-size:12px;font-weight:800;color:var(--text);font-family:'Saira Condensed',sans-serif;min-width:54px;}
+.line-info{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0;}
+.line-counts{font-size:10px;color:var(--muted2);}
+.line-mini-bar{height:3px;background:var(--border2);border-radius:3px;overflow:hidden;}
+.line-mini-fill{height:100%;border-radius:3px;transition:width .3s;}
+.line-eye-btn{padding:4px 6px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:12px;cursor:pointer;flex-shrink:0;transition:all .15s;}
+.line-eye-btn:hover{border-color:var(--s3-teal);color:var(--s3-cyan);}
+.line-eye-btn.hidden-line{opacity:.4;border-style:dashed;}
+
+/* MODE TOGGLE */
+.mode-toggle-wrap{display:flex;gap:6px;margin-bottom:14px;}
+.mode-btn{flex:1;padding:11px 8px;border-radius:10px;border:2px solid var(--border);background:var(--panel);color:var(--muted2);cursor:pointer;font-size:13px;font-weight:800;text-align:center;font-family:'Saira Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;transition:all .2s;}
+.mode-btn.active-layout{border-color:var(--validated);background:rgba(0,212,160,.1);color:var(--validated);}
+.mode-btn.active-pickup{border-color:var(--s3-cyan);background:rgba(0,229,200,.1);color:var(--s3-cyan);}
+
+/* POINT LIST */
+.pt-row{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;cursor:pointer;border:1px solid transparent;transition:all .1s;font-size:11px;}
+.pt-row:hover{background:rgba(0,229,200,.05);border-color:var(--border);}
+.pt-row.selected{background:rgba(0,229,200,.08);border-color:var(--s3-teal);}
+.pt-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.pt-name{flex:1;color:var(--text);font-family:'Saira Condensed',sans-serif;font-weight:600;}
+.pt-badge{font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;color:#000;}
+
+/* STATS */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.sc{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+.sv{font-size:22px;font-weight:700;font-family:'Saira Condensed',sans-serif;}
+.sl{font-size:10px;color:var(--muted);margin-top:3px;}
+.sp{font-size:11px;color:var(--muted2);font-weight:600;margin-top:2px;font-family:'Saira Condensed',sans-serif;}
+.pbar{height:4px;background:var(--border);border-radius:999px;overflow:hidden;margin:5px 0;}
+.pfill{height:100%;background:var(--validated);transition:width .4s;}
+.srow{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-bottom:4px;border-left-width:2px;}
+.srv{font-size:18px;font-weight:700;min-width:32px;font-family:'Saira Condensed',sans-serif;}
+.srl{flex:1;font-size:11px;color:var(--muted2);}
+.srp{font-size:11px;color:var(--muted);font-family:'Saira Condensed',sans-serif;}
+
+/* LAYER LIST */
+.layer-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px;}
+.layer-name-row{display:flex;align-items:center;gap:8px;}
+.layer-label{flex:1;font-size:12px;font-weight:700;color:var(--text);font-family:'Saira Condensed',sans-serif;}
+
+/* FOOTERBAR / TOAST */
+.footerbar{position:absolute;bottom:10px;left:52px;z-index:500;background:rgba(6,18,32,.96);backdrop-filter:blur(8px);border:1px solid rgba(0,229,200,.2);padding:7px 12px;border-radius:8px;color:var(--muted2);font-size:11px;}
+.legend{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+.legend .item{display:inline-flex;align-items:center;gap:5px;}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+.toast{position:fixed;right:12px;bottom:12px;z-index:700;background:var(--panel2);border:1px solid var(--border2);padding:8px 14px;border-radius:8px;font-size:11px;color:var(--text);display:none;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,.5);}
+
+/* POI */
+.poi-row{display:flex;align-items:center;gap:8px;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-bottom:4px;cursor:pointer;}
+.poi-row:hover{border-color:var(--s3-teal);}
+
+/* MOBILE */
+@media(max-width:767px){
+  :root{--header-h:40px;--bottomnav-h:62px;}
+  .main{display:flex;flex-direction:column;height:calc(100vh - var(--header-h) - var(--bottomnav-h));width:100%;overflow:hidden;}
+  .panel{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box;flex:1;height:auto;border-right:none;border-top:1px solid var(--border);overflow:hidden;}
+  .mapwrap{flex:0 0 44vh;min-height:160px;position:relative;overflow:hidden;width:100%;}
+  .mapwrap.collapsed{flex:0 0 32px!important;min-height:32px!important;}
+  .mapwrap.fullscreen{flex:0 0 calc(100vh - var(--header-h) - var(--bottomnav-h))!important;}
+  .tabnav{display:none;}
+  .mobile-bottomnav{display:flex;flex-shrink:0;background:var(--panel);border-top:1px solid var(--border2);height:var(--bottomnav-h);padding-bottom:env(safe-area-inset-bottom,4px);position:fixed;bottom:0;left:0;right:0;z-index:1000;}
+  .mobile-bottomnav button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:transparent;border:none;border-top:2px solid transparent;color:var(--muted);font-size:8px;font-weight:700;gap:2px;cursor:pointer;padding:4px 1px;letter-spacing:.3px;font-family:'Saira Condensed',sans-serif;-webkit-tap-highlight-color:transparent;min-width:0;}
+  .mobile-bottomnav button.active{color:var(--s3-cyan);border-top-color:var(--s3-cyan);}
+  .nav-icon{font-size:18px;line-height:1;}
+  .map-toggle-btn{z-index:1000!important;position:fixed!important;bottom:calc(var(--bottomnav-h) + 6px)!important;left:50%!important;transform:translateX(-50%)!important;width:56px;height:22px;border-radius:11px!important;border:1px solid rgba(0,229,200,.4)!important;background:rgba(8,14,20,.9)!important;}
+  input[type="text"],input[type="date"],input[type="time"],select,textarea{padding:10px 11px;font-size:16px;}
+  button{padding:10px 14px;font-size:13px;}
+  .sbtn{padding:12px 4px;font-size:12px;}
+  .tab{padding:10px;flex:0 0 100%!important;width:100%!important;min-width:0!important;box-sizing:border-box;}
+  .sec{padding:10px;margin-bottom:8px;}
+  .footerbar{display:none;}
+  .toast{bottom:calc(var(--bottomnav-h) + 8px);}
+  .pills{flex:1;justify-content:flex-end;gap:3px;}
+  .pill{font-size:9px;padding:2px 5px;}
+  .leaflet-bottom{bottom:calc(var(--bottomnav-h) + 4px)!important;}
+  .leaflet-control-attribution{display:none!important;}
+  .leaflet-control-zoom{display:none!important;}
+  html,body,.main{overflow-x:hidden;}
+  #headerRightSep{display:none;}
+}
+@media(max-width:374px){
+  .mobile-bottomnav button{font-size:7px;}
+  .nav-icon{font-size:16px;}
+  :root{--header-h:38px;--bottomnav-h:58px;}
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
+</head>
+<body>
+
+<!-- ═══ HEADER ════════════════════════════════════════════════════════════ -->
+<header>
+  <div style="display:flex;align-items:center;flex-shrink:0;height:100%">
+    <!-- ⚠ LOGO PLACEHOLDER — uploader votre logo PNG/SVG pour remplacer ce bloc -->
+    <div class="header-logo" id="companyLogo" style="padding:4px 8px">
+      <svg viewBox="0 0 72 36" xmlns="http://www.w3.org/2000/svg" style="height:34px;width:auto">
+        <text x="4" y="26" font-family="'Saira Condensed',Arial Black,sans-serif" font-size="28" font-weight="900" fill="#00e5c8" letter-spacing="-1">S³</text>
+        <text x="38" y="18" font-family="'Saira Condensed',Arial,sans-serif" font-size="7" font-weight="700" fill="#6a9ab0" letter-spacing="1">SMART</text>
+        <text x="38" y="27" font-family="'Saira Condensed',Arial,sans-serif" font-size="7" font-weight="700" fill="#6a9ab0" letter-spacing="1">SEISMIC</text>
+        <text x="38" y="35" font-family="'Saira Condensed',Arial,sans-serif" font-size="5.5" font-weight="600" fill="#3a5a6e" letter-spacing="0.5">SOLUTIONS</text>
+      </svg>
+    </div>
+
+    <!-- Séparateur gauche (entre logo et titre) -->
+    <div style="width:1px;height:28px;background:rgba(0,229,200,.2);flex-shrink:0;margin:0 6px"></div>
+
+    <!-- Titre centré sur les 360px du panel -->
+    <div style="position:absolute;left:0;width:360px;display:flex;flex-direction:column;line-height:1.1;align-items:center;pointer-events:none">
+      <span id="headerTitle" style="font-size:15px;font-weight:800;letter-spacing:1.5px;color:var(--s3-cyan);font-family:'Saira Condensed',sans-serif;text-transform:uppercase">Layout</span>
+      <span style="font-size:10px;font-weight:600;letter-spacing:2.5px;color:var(--muted2);font-family:'Saira Condensed',sans-serif;text-transform:uppercase">Pick-Up Report</span>
+    </div>
+  </div>
+
+  <!-- Séparateur droit — bord exact du panel (360px) -->
+  <div id="headerRightSep" style="position:absolute;top:0;bottom:0;left:360px;width:1px;background:linear-gradient(180deg,transparent,rgba(0,229,200,.45),transparent);pointer-events:none"></div>
+
+  <div class="pills">
+    <div class="pill" style="cursor:default">Total: <b><span id="count">0</span></b></div>
+    <div class="pill" style="color:var(--normal);cursor:pointer" id="pillN" onclick="togglePillFilter('normal')">Todo <b><span id="cN">0</span></b></div>
+    <div class="pill" style="color:var(--validated);cursor:pointer" id="pillE" onclick="togglePillFilter('edited')">✓ <b><span id="cE">0</span></b></div>
+    <div class="pill" style="color:var(--jump);cursor:pointer" id="pillJ" onclick="togglePillFilter('jump')"><span id="pillJLabel">Jump</span> <b><span id="cJ">0</span></b></div>
+    <div class="pill" style="color:var(--skip);cursor:pointer" id="pillS" onclick="togglePillFilter('skip')">Skip <b><span id="cS">0</span></b></div>
+  </div>
+</header>
+
+<!-- ═══ POI MODAL ══════════════════════════════════════════════════════════ -->
+<div id="poiOverlay" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,.7);backdrop-filter:blur(3px);align-items:center;justify-content:center;">
+  <div style="background:var(--panel);border:1px solid var(--border2);border-radius:14px;width:min(400px,94vw);overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.6)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)">
+      <div style="font-size:14px;font-weight:700;color:var(--text)" id="poiModalTitle">Nouveau POI</div>
+      <button onclick="closePoiEditor()" style="background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer">✕</button>
+    </div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+      <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Titre</label><input id="poiTitle" type="text" placeholder="POI…"/></div>
+      <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Commentaire</label><textarea id="poiComment" placeholder="Détails…" style="min-height:55px"></textarea></div>
+      <div style="display:flex;gap:8px">
+        <button onclick="savePoi()" class="primary" style="flex:1">Enregistrer</button>
+        <button id="poiDeleteBtn" onclick="deletePoi()" class="danger" style="flex:0 0 auto;display:none">Supprimer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MAIN ══════════════════════════════════════════════════════════════ -->
+<div class="main">
+<div class="panel">
+  <button onclick="toggleMapCollapse()" class="map-toggle-btn"><span class="hb"></span><span class="hb"></span><span class="hb"></span></button>
+
+  <!-- TABNAV — 5 onglets -->
+  <div class="tabnav">
+    <button class="active" onclick="switchTab(this,'map')">MAP</button>
+    <button onclick="switchTab(this,'layers')">LAYERS</button>
+    <button onclick="switchTab(this,'poi')">POI</button>
+    <button onclick="switchTab(this,'display')">DISPLAY</button>
+    <button onclick="switchTab(this,'stats')">STATS</button>
+  </div>
+
+  <div class="tabcontent">
+  <div class="tabtrack" id="tabtrack">
+
+  <!-- ══ TAB MAP (inclut édition) ════════════════════════════════════════ -->
+  <div class="tab" id="tab-map">
+
+    <!-- MODE -->
+    <div class="mode-toggle-wrap">
+      <button class="mode-btn active-layout" id="modeLayout" onclick="setMode('layout')">⬇ LAYOUT</button>
+      <button class="mode-btn" id="modePickup" onclick="setMode('pickup')">⬆ PICK-UP</button>
+    </div>
+
+    <!-- CREW -->
+    <div class="sec" id="secCrew">
+      <div class="sec-header" onclick="toggleSec('secCrew')"><h3>CREW</h3><span class="sec-chevron">▼</span></div>
+      <div class="sec-body" id="secCrewBody">
+        <div style="height:10px"></div>
+        <div class="prod-field">
+          <label>DATE</label>
+          <input id="dateInput" type="date" style="font-family:'Saira Condensed',sans-serif;font-size:14px;font-weight:700"/>
+        </div>
+        <div class="sep"><div class="sep-line"></div><div class="sep-line-rev"></div></div>
+        <div class="prod-field"><label>TEAM LEAD</label><input id="crewLead" type="text" placeholder="Name"/></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="prod-field"><label>OPERATOR #1</label><input id="crew1" type="text" placeholder="Name"/></div>
+          <div class="prod-field"><label>OPERATOR #2</label><input id="crew2" type="text" placeholder="Name"/></div>
+          <div class="prod-field"><label>OPERATOR #3</label><input id="crew3" type="text" placeholder="Name"/></div>
+          <div class="prod-field"><label>OPERATOR #4</label><input id="crew4" type="text" placeholder="Name"/></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KMZ LOADER -->
+    <div class="sec" id="secKmz">
+      <div class="sec-header" onclick="toggleSec('secKmz')"><h3>CHARGER KMZ / KML</h3><span class="sec-chevron">▼</span></div>
+      <div class="sec-body" id="secKmzBody">
+        <div style="height:10px"></div>
+        <div class="drop">
+          <div class="col">
+            <label>Déposer un ou plusieurs <b>.kmz</b> / <b>.kml</b> ici</label>
+            <input id="fileInput" type="file" accept=".kmz,.kml" multiple/>
+            <div class="hint">Gérer l'ordre dans <b>LAYERS</b>.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LINES LIST -->
+    <div class="sec" id="secLines" style="display:none">
+      <div class="sec-header" onclick="toggleSec('secLines')"><h3 id="linesSecTitle">LIGNES (0)</h3><span class="sec-chevron">▼</span></div>
+      <div class="sec-body" id="secLinesBody">
+        <div style="height:8px"></div>
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <button onclick="selectAllLines()" style="flex:1;font-size:10px;padding:5px 8px;border:1px solid var(--border2);border-radius:6px;background:var(--panel2);color:var(--s3-cyan)">☑ Toutes</button>
+          <button onclick="clearLineSelection()" style="flex:1;font-size:10px;padding:5px 8px;border:1px solid var(--border2);border-radius:6px;background:var(--panel2);color:var(--muted2)">✕ Désel.</button>
+        </div>
+        <div id="linesList"></div>
+      </div>
+    </div>
+
+    <!-- ══ ÉDITION ═════════════════════════════════════════════════════ -->
+    <div class="sep">
+      <div class="sep-line"></div>
+      <div class="sep-label">ÉDITION</div>
+      <div class="sep-line-rev"></div>
+    </div>
+
+    <!-- Sélection de ligne -->
+    <div class="sec" style="padding:8px 10px;margin-bottom:6px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="font-size:10px;font-weight:700;color:var(--muted2);letter-spacing:1px;text-transform:uppercase;font-family:'Saira Condensed',sans-serif;white-space:nowrap">LIGNE</div>
+        <select id="lineSelectDropdown" onchange="onLineDropdownChange(this.value)" style="flex:1;background:var(--bg);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:6px 10px;font-family:'Saira Condensed',sans-serif;font-size:16px;font-weight:700">
+          <option value="">— Choisir —</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Point sélectionné -->
+    <div class="sec" style="margin-bottom:6px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <h3 style="margin:0">POINT SÉLECTIONNÉ</h3>
+        <div style="display:flex;gap:5px;align-items:center">
+          <!-- Compteur de sélection -->
+          <div id="selBadge" style="display:none;font-size:11px;font-weight:800;color:#000;background:var(--s3-cyan);padding:3px 9px;border-radius:999px;font-family:'Saira Condensed',sans-serif;letter-spacing:.5px"></div>
+          <button id="btnSelMode" onclick="toggleSelMode()" style="font-size:10px;padding:4px 8px;background:var(--panel);border:1px solid var(--border);color:var(--muted);border-radius:7px">☐ Multi</button>
+          <div id="selCountEdit" style="display:none;font-size:10px;font-weight:700;color:var(--accent);padding:4px 8px;background:rgba(0,212,184,.1);border:1px solid var(--accent);border-radius:7px;white-space:nowrap"></div>
+        </div>
+      </div>
+
+      <!-- Info card -->
+      <div id="selCard" style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:8px 10px;font-size:11px;display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:18px">📍</span>
+        <div style="flex:1;min-width:0">
+          <div id="selCardName" style="color:var(--text);font-weight:700;font-size:13px">—</div>
+          <div id="selCardSub" style="color:var(--muted);font-size:10px;margin-top:1px">Tap un point sur la carte</div>
+        </div>
+        <div id="selCardBadge" style="display:none;font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px"></div>
+      </div>
+
+      <label>Commentaire</label>
+      <textarea id="selComment" placeholder="Commentaire…" style="margin-top:4px;min-height:48px"></textarea>
+
+      <div class="sep" style="margin:10px 0 8px"><div class="sep-line"></div><div class="sep-line-rev"></div></div>
+
+      <label style="margin-bottom:6px;display:block">Status</label>
+      <div class="status-btns">
+        <div class="sbtn" id="btn-todo" onclick="setStatus('todo')">TO DO</div>
+        <div class="sbtn" id="btn-done" onclick="setStatus('done')" style="border-color:var(--validated);color:var(--validated)">✓ LAID</div>
+        <div class="sbtn" id="btn-jump" onclick="setStatus('jump')">JUMP</div>
+        <div class="sbtn" id="btn-skip" onclick="setStatus('skip')">SKIP</div>
+      </div>
+      <div id="skipReasonBlock" style="display:none;margin-top:6px">
+        <div class="reason-list" id="reasonList"></div>
+      </div>
+
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <button id="applyEdit" class="primary" style="flex:1" disabled>✓ Appliquer</button>
+        <button id="clearSel" class="ghost" style="flex:0 0 auto">✕</button>
+      </div>
+    </div>
+
+    <!-- Liste des points (collapsible) -->
+    <div class="sec" id="secPtList">
+      <div class="sec-header" onclick="toggleSec('secPtList')"><h3>POINTS DE LA LIGNE</h3><span class="sec-chevron">▼</span></div>
+      <div class="sec-body" id="secPtListBody">
+        <div style="height:8px"></div>
+        <div style="display:flex;gap:5px;margin-bottom:8px">
+          <button onclick="selectAllPoints()" style="flex:1;padding:5px 8px;font-size:10px;border:1px solid var(--border2);border-radius:6px;background:var(--panel2);color:var(--s3-cyan)">☑ ALL</button>
+          <button onclick="selectNPoints(5)" style="padding:5px 10px;font-size:10px;border:1px solid var(--border2);border-radius:6px;background:var(--panel2);color:var(--muted2)">×5</button>
+          <button onclick="selectNPoints(10)" style="padding:5px 10px;font-size:10px;border:1px solid var(--border2);border-radius:6px;background:var(--panel2);color:var(--muted2)">×10</button>
+          <button onclick="clearPointSelection()" style="padding:5px 10px;font-size:10px;border:1px solid var(--border2);border-radius:6px;background:var(--panel2);color:var(--muted)">✕</button>
+        </div>
+        <div id="pointList" style="display:flex;flex-direction:column;gap:2px;max-height:220px;overflow-y:auto"></div>
+      </div>
+    </div>
+
+  </div><!-- /tab-map -->
+
+  <!-- ══ TAB LAYERS ══════════════════════════════════════════════════════ -->
+  <div class="tab" id="tab-layers">
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted2);font-family:'Saira Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;flex:1">Mes couches</div>
+      <label for="fileInput2" style="cursor:pointer;padding:5px 10px;background:var(--panel2);border:1px solid var(--border2);border-radius:6px;font-size:11px;font-weight:700;color:var(--accent2)">+ Ajouter</label>
+      <input id="fileInput2" type="file" accept=".kmz,.kml" multiple style="display:none"/>
+    </div>
+    <div id="layersList">
+      <div style="text-align:center;padding:30px 10px;color:var(--muted);font-size:12px"><div style="font-size:32px;margin-bottom:8px;opacity:.3">📂</div>Aucune couche chargée.</div>
+    </div>
+  </div>
+
+  <!-- ══ TAB POI ═════════════════════════════════════════════════════════ -->
+  <div class="tab" id="tab-poi">
+    <div class="sec">
+      <h3>POINTS D'INTÉRÊT</h3>
+      <div class="hint" style="margin-bottom:10px">Double-cliquer sur la carte pour ajouter un POI.</div>
+      <div id="poiList"></div>
+      <div id="poiEmpty" class="hint" style="text-align:center;padding:16px;display:none">Aucun POI.</div>
+    </div>
+  </div>
+
+  <!-- ══ TAB DISPLAY ═════════════════════════════════════════════════════ -->
+  <div class="tab" id="tab-display">
+    <div class="sec">
+      <h3>FILTRES</h3>
+      <div class="col">
+        <label>Filtrer par ligne</label>
+        <div style="display:flex;gap:6px">
+          <input id="lineFilter" list="lineFilterList" placeholder="— toutes —" style="flex:1" autocomplete="off"/>
+          <datalist id="lineFilterList"></datalist>
+          <button onclick="applyLineFilter()" style="padding:7px 10px;font-size:11px;border:1px solid var(--border2);border-radius:7px;background:var(--panel);color:var(--muted2)">OK</button>
+        </div>
+        <label>Recherche</label>
+        <input id="searchFilter" type="text" placeholder="station / ligne / commentaire…"/>
+        <label class="row" style="gap:6px;margin-top:4px"><input id="showEditedOnly" type="checkbox"/> Édités seulement</label>
+      </div>
+    </div>
+    <div class="sec">
+      <h3>VISIBILITÉ</h3>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <div onclick="togglePillFilter('normal')" style="flex:1;min-width:60px;text-align:center;padding:8px;border-radius:9px;border:1px solid var(--border);cursor:pointer;font-size:12px;font-weight:700;color:var(--normal)">TO DO</div>
+        <div onclick="togglePillFilter('jump')" style="flex:1;min-width:60px;text-align:center;padding:8px;border-radius:9px;border:1px solid var(--border);cursor:pointer;font-size:12px;font-weight:700;color:var(--jump)" id="visJ">JUMP</div>
+        <div onclick="togglePillFilter('skip')" style="flex:1;min-width:60px;text-align:center;padding:8px;border-radius:9px;border:1px solid var(--border);cursor:pointer;font-size:12px;font-weight:700;color:var(--skip)">SKIP</div>
+        <div onclick="togglePillFilter('edited')" style="flex:1;min-width:60px;text-align:center;padding:8px;border-radius:9px;border:1px solid var(--border);cursor:pointer;font-size:12px;font-weight:700;color:var(--validated)">DONE</div>
+      </div>
+    </div>
+    <div class="sec">
+      <h3>OPTIONS CARTE</h3>
+      <div class="col">
+        <label>Labels</label>
+        <div style="display:flex;gap:4px">
+          <button id="lblHover" onclick="setLabelMode('hover')" style="flex:1;font-size:11px;padding:6px 4px;border-radius:8px;background:#0a2030;color:var(--normal);border:1px solid var(--normal)">Survol</button>
+          <button id="lblAll" onclick="setLabelMode('all')" style="flex:1;font-size:11px;padding:6px 4px;border-radius:8px;background:var(--panel2);color:var(--muted);border:1px solid var(--border2)">Tous</button>
+        </div>
+        <label class="row" style="gap:6px;margin-top:4px"><input id="toggleLines" type="checkbox"/> Relier les points par ligne</label>
+      </div>
+    </div>
+    <div class="sec">
+      <h3>IMPORT / EXPORT</h3>
+      <div class="col">
+        <button id="downloadBtn" class="primary" disabled>Download CSV</button>
+        <button id="importBtn" class="ghost">Import CSV</button>
+        <input id="importInput" type="file" accept=".csv,text/csv" style="display:none"/>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+          <div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:6px">Maintenir appuyé pour effacer toutes les données</div>
+          <div style="position:relative;height:36px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,107,107,.25)">
+            <div id="clearAllProgress" style="position:absolute;inset:0;background:rgba(255,107,107,.12);width:0%;transition:width 0.9s linear;border-radius:8px"></div>
+            <button id="clearBtn" style="position:absolute;inset:0;width:100%;background:transparent;border:none;color:rgba(255,107,107,.5);font-size:11px;font-weight:600;cursor:pointer;user-select:none;letter-spacing:.3px">✕ Clear all data</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB STATS ═══════════════════════════════════════════════════════ -->
+  <div class="tab" id="tab-stats">
+
+    <!-- Bandeau MODE (dynamique) -->
+    <div id="statModeBanner" style="border-radius:12px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:14px;background:rgba(0,212,160,.08);border:1.5px solid var(--validated)">
+      <div id="statModeIcon" style="font-size:32px;line-height:1">⬇</div>
+      <div style="flex:1;min-width:0">
+        <div id="statModeLabel" style="font-size:16px;font-weight:800;font-family:'Saira Condensed',sans-serif;letter-spacing:2px;text-transform:uppercase;color:var(--validated)">LAYOUT</div>
+        <div id="statModeDesc" style="font-size:11px;color:var(--muted2);margin-top:2px">Installation des capteurs au sol</div>
+      </div>
+      <div style="text-align:right">
+        <div id="statModePct" style="font-size:26px;font-weight:800;font-family:'Saira Condensed',sans-serif;color:var(--validated)">0%</div>
+        <div style="font-size:9px;color:var(--muted);letter-spacing:.5px">AVANCEMENT</div>
+      </div>
+    </div>
+
+    <!-- Barre de progression principale -->
+    <div style="margin-bottom:14px;background:var(--panel2);border:1px solid var(--border2);border-radius:10px;padding:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:10px;color:var(--muted);letter-spacing:.5px;font-family:'Saira Condensed',sans-serif;text-transform:uppercase">Progression</span>
+        <span id="stProgLbl" style="font-size:13px;font-weight:700;font-family:'Saira Condensed',sans-serif;color:var(--text)">0 / 0</span>
+      </div>
+      <div class="pbar" style="height:8px;border-radius:8px"><div class="pfill" id="stProgFill" style="width:0%;border-radius:8px"></div></div>
+    </div>
+
+    <!-- Grille 4 compteurs -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div class="sc" style="border-left:3px solid var(--validated)">
+        <div class="sv" id="stDone" style="color:var(--validated)">0</div>
+        <div class="sl" id="stDoneLabel">Posés</div>
+        <div class="sp" id="stDonePct">0%</div>
+      </div>
+      <div class="sc" style="border-left:3px solid var(--normal)">
+        <div class="sv" id="stTodo" style="color:var(--normal)">0</div>
+        <div class="sl">To Do</div>
+        <div class="sp" id="stTodoPct">0%</div>
+      </div>
+      <div class="sc" style="border-left:3px solid var(--jump)">
+        <div class="sv" id="stJump" style="color:var(--jump)">0</div>
+        <div class="sl" id="stJumpLabel">Jump</div>
+        <div class="sp" id="stJumpPct">0%</div>
+      </div>
+      <div class="sc" style="border-left:3px solid var(--skip)">
+        <div class="sv" id="stSkip" style="color:var(--skip)">0</div>
+        <div class="sl">Skip</div>
+        <div class="sp" id="stSkipPct">0%</div>
+      </div>
+    </div>
+
+    <!-- Total -->
+    <div style="text-align:center;padding:8px;background:var(--panel2);border:1px solid var(--border2);border-radius:8px;margin-bottom:12px;font-size:11px;color:var(--muted)">
+      Total capteurs chargés : <b id="stTotal" style="color:var(--text);font-size:14px">0</b>
+    </div>
+
+    <!-- Raisons SKIP -->
+    <div id="stSkipBlock" style="display:none;margin-bottom:12px">
+      <div style="font-size:10px;font-weight:700;color:var(--skip);letter-spacing:1px;text-transform:uppercase;font-family:'Saira Condensed',sans-serif;margin-bottom:6px">Raisons SKIP</div>
+      <div id="stSkipList"></div>
+    </div>
+
+    <!-- Stats par ligne -->
+    <div class="sec" id="secLineStats" style="display:none">
+      <div class="sec-header" onclick="toggleSec('secLineStats')"><h3>PAR LIGNE</h3><span class="sec-chevron">▼</span></div>
+      <div class="sec-body" id="secLineStatsBody">
+        <div style="height:8px"></div>
+        <div id="lineStatsList"></div>
+      </div>
+    </div>
+
+  </div>
+
+  </div><!-- /tabtrack -->
+  </div><!-- /tabcontent -->
+
+  <!-- MOBILE NAV — 5 boutons -->
+  <nav class="mobile-bottomnav" id="mobileNav">
+    <button onclick="switchTab(this,'map')" class="active"><span class="nav-icon">🗺</span>MAP</button>
+    <button onclick="switchTab(this,'layers')"><span class="nav-icon">📂</span>LAYERS</button>
+    <button onclick="switchTab(this,'poi')"><span class="nav-icon">📍</span>POI</button>
+    <button onclick="switchTab(this,'display')"><span class="nav-icon">⚙️</span>DISPLAY</button>
+    <button onclick="switchTab(this,'stats')"><span class="nav-icon">📊</span>STATS</button>
+  </nav>
+</div><!-- /panel -->
+
+<!-- MAP WRAP -->
+<div class="mapwrap" id="mapwrap">
+  <div id="map"></div>
+
+  <div id="selCount" style="display:none;position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1001;background:rgba(0,212,184,.12);border:1px solid var(--normal);color:var(--normal);padding:4px 12px;font-size:11px;border-radius:20px;font-weight:700;backdrop-filter:blur(4px);white-space:nowrap;pointer-events:none"></div>
+
+  <!-- Basemap + controls -->
+  <div style="position:absolute;top:10px;left:10px;z-index:1001;display:flex;flex-direction:column;gap:6px">
+    <div style="background:rgba(6,18,32,.96);backdrop-filter:blur(8px);border:1px solid rgba(0,229,200,.25);border-radius:9px;overflow:hidden;display:flex;flex-direction:column">
+      <button id="bm-satellite" onclick="setBasemap('satellite')" style="padding:7px 10px;border:none;border-radius:0;border-bottom:1px solid var(--border);background:var(--normal);color:#fff;font-size:10px;font-weight:700;text-align:left">🛰 SAT</button>
+      <button id="bm-topo" onclick="setBasemap('topo')" style="padding:7px 10px;border:none;border-radius:0;border-bottom:1px solid var(--border);background:transparent;color:var(--muted2);font-size:10px;font-weight:700;text-align:left">⛰ TOPO</button>
+      <button id="bm-osm" onclick="setBasemap('osm')" style="padding:7px 10px;border:none;background:transparent;color:var(--muted2);font-size:10px;font-weight:700;text-align:left">🗺 MAP</button>
+    </div>
+    <button id="mapMultiBtn" onclick="toggleSelMode()" style="padding:7px 10px;background:rgba(6,18,32,.96);backdrop-filter:blur(8px);border:1px solid rgba(0,229,200,.25);border-radius:8px;color:var(--muted2);font-size:10px;font-weight:700;text-align:left;white-space:nowrap">☐ MULTI</button>
+    <button onclick="togglePoiMode()" id="mapPoiBtn" style="padding:7px 10px;background:rgba(6,18,32,.96);backdrop-filter:blur(8px);border:1px solid rgba(0,229,200,.25);border-radius:8px;color:var(--muted2);font-size:10px;font-weight:700;text-align:left;white-space:nowrap">🏷 POI</button>
+  </div>
+
+  <!-- Legend -->
+  <div class="footerbar">
+    <div class="legend">
+      <div class="item"><span class="dot" style="background:var(--validated)"></span><span id="legDone">Laid</span></div>
+      <div class="item"><span class="dot" style="background:var(--normal)"></span>To do</div>
+      <div class="item"><span class="dot" style="background:var(--jump)"></span><span id="legJump">Jump</span></div>
+      <div class="item"><span class="dot" style="background:var(--skip)"></span>Skip</div>
+    </div>
+  </div>
+  <div id="toast" class="toast"></div>
+</div>
+</div><!-- /main -->
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tmcw/togeojson@5.4.0/dist/togeojson.umd.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/proj4@2.9.2/dist/proj4.js" crossorigin="anonymous"></script>
+
+<script>
+// ── UTILS ──────────────────────────────────────────────────────────────────
+const $=s=>document.querySelector(s);
+const todayISO=()=>{const d=new Date(),o=d.getTimezoneOffset();return new Date(d.getTime()-o*60000).toISOString().slice(0,10);};
+function showToast(msg,ms=5000){const t=$('#toast');t.textContent=msg;t.style.display='block';clearTimeout(showToast._t);showToast._t=setTimeout(()=>t.style.display='none',ms);}
+function esc(s){return String(s||'').replace(/[&<>"]+/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]||c));}
+window.onerror=function(msg,src,l,c,e){showToast('⚠ '+String(msg).slice(0,80));console.error('[ERR]',msg,src,l,e);return false;};
+
+// ── CONSTANTS ──────────────────────────────────────────────────────────────
+const TABS=['map','layers','poi','display','stats'];
+const STORAGE_KEY='lp_report_v2_state';
+const SKIP_REASONS_LAYOUT=['PPV','Refusal / Permitting','Difficult access','Fence / Gate / Barrier','Steep slope','Obstacle','Underground utilities','Work site / Construction','Bridge / Railway','Safety'];
+const SKIP_REASONS_PICKUP=['Not found','Cable damaged','Animal damage','Buried / Flooded','Stolen','Obstacle','Bridge / Railway','Safety'];
+const LAYER_COLORS=['#00b4d8','#f0883e','#00d4a0','#c084fc','#fb923c','#34d399','#60a5fa','#f472b6'];
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+const state={
+  mode:'layout',
+  points:[],selectedIds:new Set(),selectedId:null,
+  map:null,groupLayer:null,poiLayer:null,tileLayer:null,
+  labelMode:'hover',linesOn:false,
+  showNormal:true,showJump:true,showSkip:true,showEdited:true,
+  hasFit:false,filterLine:'',searchText:'',editedOnly:false,
+  pois:[],pinnedLabels:new Set(),
+  selMode:false,_poiMode:false,
+  kmzLayers:[],_nextLayerId:1,
+  hiddenLines:new Set(),
+  curStatus:'todo',curReason:'',
+};
+let currentTab=0,isRend=false;
+
+// ── MODE ───────────────────────────────────────────────────────────────────
+function setMode(m){
+  state.mode=m;
+  document.getElementById('modeLayout').className='mode-btn'+(m==='layout'?' active-layout':'');
+  document.getElementById('modePickup').className='mode-btn'+(m==='pickup'?' active-pickup':'');
+  document.getElementById('headerTitle').textContent=m==='layout'?'Layout':'Pick-Up';
+  document.getElementById('pillJLabel').textContent=m==='layout'?'Jump':'Miss.';
+  document.getElementById('legDone').textContent=m==='layout'?'Laid':'Picked';
+  document.getElementById('legJump').textContent=m==='layout'?'Jump':'Missing';
+  document.getElementById('btn-done').textContent=m==='layout'?'✓ LAID':'✓ PICKED';
+  document.getElementById('btn-jump').textContent=m==='layout'?'JUMP':'MISSING';
+  document.getElementById('visJ').textContent=m==='layout'?'JUMP':'MISSING';
+  // Stats banner
+  const banner=document.getElementById('statModeBanner');
+  const icon=document.getElementById('statModeIcon');
+  const label=document.getElementById('statModeLabel');
+  const desc=document.getElementById('statModeDesc');
+  const pct=document.getElementById('statModePct');
+  const doneLabel=document.getElementById('stDoneLabel');
+  const jumpLabel=document.getElementById('stJumpLabel');
+  if(m==='layout'){
+    if(banner){banner.style.background='rgba(0,212,160,.08)';banner.style.borderColor='var(--validated)';}
+    if(icon)icon.textContent='⬇';if(label){label.textContent='LAYOUT';label.style.color='var(--validated)';}
+    if(desc)desc.textContent='Installation des capteurs au sol';
+    if(pct)pct.style.color='var(--validated)';
+    if(doneLabel)doneLabel.textContent='Posés (Laid)';
+    if(jumpLabel)jumpLabel.textContent='Jump';
+  } else {
+    if(banner){banner.style.background='rgba(0,229,200,.08)';banner.style.borderColor='var(--s3-cyan)';}
+    if(icon)icon.textContent='⬆';if(label){label.textContent='PICK-UP';label.style.color='var(--s3-cyan)';}
+    if(desc)desc.textContent='Ramassage des capteurs au sol';
+    if(pct)pct.style.color='var(--s3-cyan)';
+    if(doneLabel)doneLabel.textContent='Ramassés (Picked)';
+    if(jumpLabel)jumpLabel.textContent='Missing';
+  }
+  if(TABS[currentTab]==='stats')updateStats();
+  scheduleSave();
+}
+
+// ── TABS + SWIPE ───────────────────────────────────────────────────────────
+function goToTab(idx,animate=true){
+  if(idx<0||idx>=TABS.length)return;
+  currentTab=idx;
+  const track=document.getElementById('tabtrack');
+  const panel=document.querySelector('.panel');
+  const w=panel?panel.offsetWidth:360;
+  if(!track)return;
+  if(window.innerWidth<=767)track.querySelectorAll('.tab').forEach(t=>{t.style.flexBasis=w+'px';t.style.width=w+'px';});
+  if(!animate){track.style.transition='none';}
+  track.style.transform=`translateX(-${idx*w}px)`;
+  if(!animate)requestAnimationFrame(()=>requestAnimationFrame(()=>{track.style.transition='';}));
+  document.querySelectorAll('.tabnav button').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  document.querySelectorAll('#mobileNav button').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  if(TABS[idx]==='stats')updateStats();
+  if(TABS[idx]==='layers')renderLayersList();
+  if(TABS[idx]==='poi')renderPoiList();
+  if(TABS[idx]==='map'){populateLineDropdown();renderLineListSection();}
+}
+function switchTab(btn,name){goToTab(TABS.indexOf(name));}
+(()=>{
+  const panel=document.querySelector('.panel');
+  let x0=null,sw=false;
+  panel.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;sw=false;},{passive:true});
+  panel.addEventListener('touchmove',e=>{if(x0===null)return;const dx=e.touches[0].clientX-x0,dy=e.touches[0].clientY-(e.touches[0]?.clientY||0);if(!sw&&Math.abs(dx)>10)sw=true;if(sw)e.preventDefault();},{passive:false});
+  panel.addEventListener('touchend',e=>{if(!sw||x0===null){x0=null;return;}const dx=e.changedTouches[0].clientX-x0;if(Math.abs(dx)>40)goToTab(dx<0?currentTab+1:currentTab-1);x0=null;sw=false;});
+})();
+
+// ── COLLAPSIBLE ────────────────────────────────────────────────────────────
+function toggleSec(id){
+  const sec=document.getElementById(id);if(!sec)return;
+  const body=document.getElementById(id+'Body');if(!body)return;
+  const col=body.classList.toggle('collapsed');
+  sec.classList.toggle('collapsed',col);
+  const chev=sec.querySelector('.sec-chevron');if(chev)chev.style.transform=col?'rotate(-90deg)':'';
+}
+
+// ── MAP COLLAPSE ───────────────────────────────────────────────────────────
+let _mapState=0;
+function toggleMapCollapse(){
+  const mw=document.getElementById('mapwrap');if(!mw)return;
+  if(window.innerWidth<=767){
+    _mapState=(_mapState+1)%3;
+    mw.classList.remove('collapsed','fullscreen');
+    if(_mapState===1)mw.classList.add('fullscreen');
+    else if(_mapState===2)mw.classList.add('collapsed');
+  }else mw.classList.toggle('collapsed');
+  setTimeout(()=>{if(state.map)state.map.invalidateSize();},320);
+}
+
+// ── MAP INIT ───────────────────────────────────────────────────────────────
+function initMap(){
+  const map=L.map('map',{zoomControl:false}).setView([30,0],3);
+  state.map=map;
+  state.tileLayer=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Esri',maxZoom:19}).addTo(map);
+  state.groupLayer=L.layerGroup().addTo(map);
+  state.poiLayer=L.layerGroup().addTo(map);
+  map.on('click',e=>{
+    if(state._poiMode){openPoiEditor(null,e.latlng);return;}
+    if(!e.originalEvent._pointClicked&&!state.selMode){state.selectedIds.clear();state.selectedId=null;updSelPanel();updateSelCount();renderPointList();}
+  });
+  map.on('dblclick',e=>{if(!state._poiMode)openPoiEditor(null,e.latlng);e.originalEvent.preventDefault();});
+}
+function setBasemap(type){
+  const tiles={satellite:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',topo:'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',osm:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'};
+  if(state.tileLayer)state.map.removeLayer(state.tileLayer);
+  state.tileLayer=L.tileLayer(tiles[type],{maxZoom:19}).addTo(state.map);
+  document.querySelectorAll('[id^="bm-"]').forEach(b=>{b.style.background='transparent';b.style.color='var(--muted2)';});
+  const btn=document.getElementById('bm-'+type);if(btn){btn.style.background='var(--normal)';btn.style.color='#fff';}
+}
+
+// ── POI MODE ───────────────────────────────────────────────────────────────
+function togglePoiMode(){
+  state._poiMode=!state._poiMode;
+  const btn=document.getElementById('mapPoiBtn');
+  if(btn){btn.style.color=state._poiMode?'var(--s3-cyan)':'var(--muted2)';btn.style.borderColor=state._poiMode?'var(--s3-cyan)':'rgba(0,229,200,.25)';}
+  state.map.getContainer().style.cursor=state._poiMode?'crosshair':'';
+  if(state._poiMode)showToast('Mode POI actif — cliquer sur la carte pour placer');
+}
+
+// ── MULTI-SELECT ───────────────────────────────────────────────────────────
+function toggleSelMode(){
+  state.selMode=!state.selMode;
+  const on=state.selMode;
+  ['btnSelMode','mapMultiBtn'].forEach(id=>{
+    const b=document.getElementById(id);if(!b)return;
+    if(id==='btnSelMode'){b.style.background=on?'rgba(0,212,184,.1)':'var(--panel)';b.style.color=on?'var(--accent2)':'var(--muted)';b.style.borderColor=on?'var(--accent2)':'var(--border)';b.textContent=on?'☑ Multi ON':'☐ Multi';}
+    else{b.style.color=on?'var(--s3-cyan)':'var(--muted2)';}
+  });
+  if(!on){state.selectedIds.clear();state.selectedId=null;updSelPanel();updateSelCount();renderPointList();}
+}
+function updateSelCount(){
+  const n=state.selectedIds.size;
+  // Badge flottant sur la carte
+  const el=document.getElementById('selCount');
+  if(el){el.style.display=n>0?'block':'none';el.textContent=n+' pt'+(n>1?'s':'')+' sélectionné'+(n>1?'s':'');}
+  // Badge cyan dans le header de section
+  const badge=document.getElementById('selBadge');
+  if(badge){badge.style.display=n>0?'inline-flex':'none';badge.textContent=n+' sél.';}
+  // Compteur multi
+  const el2=document.getElementById('selCountEdit');
+  if(el2){el2.style.display=n>1?'inline-flex':'none';el2.textContent=n+' pts';}
+  // Activer le bouton Apply dès qu'au moins 1 point est sélectionné
+  const applyBtn=document.getElementById('applyEdit');if(applyBtn)applyBtn.disabled=n===0;
+}
+
+// ── GEO HELPERS ────────────────────────────────────────────────────────────
+function isVLL(lng,lat){return Number.isFinite(lng)&&Number.isFinite(lat)&&Math.abs(lat)<=90&&Math.abs(lng)<=180;}
+function normLL(lon,lat){const L=parseFloat(lon),A=parseFloat(lat);if(isNaN(L)||isNaN(A))return null;if(isVLL(L,A))return{lng:L,lat:A};if(isVLL(A,L))return{lng:A,lat:L};return null;}
+function dispKey(p){if(!p)return'';const s=String(p.station||'').trim();if(s)return s;const l=String(p.line||'').trim(),pt=String(p.point||'').trim();if(l||pt)return`L${l||'?'}-P${pt||'?'}`;return String(p.uid||p.id||'');}
+function parseLP(name){const s=String(name||'');let m=s.match(/L(?:ine)?\s*([A-Za-z0-9]+)[^0-9A-Za-z]+P(?:oint|t)?\s*([A-Za-z0-9]+)/i);if(m)return{line:m[1],point:m[2]};m=s.match(/([A-Za-z0-9]+)[\-_ ]+(\d{1,5})$/);if(m)return{line:m[1],point:m[2]};return{line:'',point:''};}
+function getPCI(props,names){if(!props)return undefined;const keys=Object.keys(props);for(const n of names){const k=keys.find(k=>k.toLowerCase()===n.toLowerCase());if(k)return props[k];}}
+function groupByLine(){const m=new Map();for(const p of state.points){const k=String(p.line||'').trim();if(!k)continue;if(!m.has(k))m.set(k,[]);m.get(k).push(p);}for(const[,arr]of m)arr.sort((a,b)=>(parseInt(a.point)||0)-(parseInt(b.point)||0));return m;}
+function refreshLineFilter(){const dl=document.getElementById('lineFilterList');if(!dl)return;const lines=[...new Set(state.points.map(p=>String(p.line||'')).filter(s=>s))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));dl.innerHTML=lines.map(l=>`<option value="${esc(l)}"></option>`).join('');}
+
+// ── BUILD POINT ────────────────────────────────────────────────────────────
+async function buildPt(feat,idx,idBase=0){
+  if(!feat.geometry)return null;
+  const type=feat.geometry.type;
+  if(type==='Point'){
+    let[xR,yR]=feat.geometry.coordinates;xR=parseFloat(xR);yR=parseFloat(yR);
+    if(!isFinite(xR)||!isFinite(yR))return null;
+    const props=feat.properties||{},nm=props.name||'';
+    let line=getPCI(props,['line','ligne','Line','LINE'])||'';
+    let point=getPCI(props,['point','pt','numero','Point','POINT'])||'';
+    let station=getPCI(props,['station','Station','STATION'])||'';
+    if(line)line=String(Math.round(parseFloat(line))||'').replace('NaN','')||line;
+    if(point)point=String(Math.round(parseFloat(point))||'').replace('NaN','')||point;
+    if((!line||!point)&&!station){const t=parseLP(nm||props.description||'');line=line||t.line;point=point||t.point;}
+    station=String(station||nm||'').trim();
+    const norm=normLL(xR,yR),ok=norm?isVLL(norm.lng,norm.lat):false;
+    const lS=String(line||'').trim(),pS=String(point||'').trim();
+    const ub=station||((lS&&pS)?`${lS}-${pS}`:'');
+    const uid=ub||`IDX-${idx}-${xR.toFixed(3)}-${yR.toFixed(3)}`;
+    return{id:idBase+idx,uid,line:lS,point:pS,station,rawX:xR,rawY:yR,lat:ok?norm.lat:null,lng:ok?norm.lng:null,comment:'',skip:false,jump:false,skipReason:'',edited:false};
+  }
+  if(type==='MultiPoint'){const out=[];let i=0;for(const c of feat.geometry.coordinates||[]){const p=await buildPt({geometry:{type:'Point',coordinates:c},properties:feat.properties},idx*1000+(i++),idBase);if(p)out.push(p);}return out;}
+  return null;
+}
+
+// ── CRS AUTO-FIX ──────────────────────────────────────────────────────────
+function defBuiltIn(){if(!window.proj4)return;if(!proj4.defs['EPSG:3857'])proj4.defs('EPSG:3857','+proj=merc +a=6378137 +b=6378137 +lat_ts=0 +lon_0=0 +x_0=0 +y_0=0 +k=1 +units=m +nadgrids=@null +no_defs');if(!proj4.defs['EPSG:2154'])proj4.defs('EPSG:2154','+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +units=m +no_defs');}
+function lutm(x,y){const X=Math.abs(parseFloat(x)),Y=Math.abs(parseFloat(y));return isFinite(X)&&isFinite(Y)&&X>=1e5&&X<=9e5&&Y>=0&&Y<=11e6;}
+function defUTM(z,h){const k=`UTM:${z}${h}`;if(!proj4.defs[k])proj4.defs(k,`+proj=utm +zone=${z} +datum=WGS84 +units=m +no_defs${h==='S'?' +south':''}`);return k;}
+function scoreCRS(samp,code){let mn=Infinity,mx=-Infinity,mla=Infinity,mxa=-Infinity,v=0;for(const[x,y]of samp){try{const o=proj4(code,'EPSG:4326',[x,y]);if(!isVLL(o[0],o[1])||Math.abs(o[1])>85)continue;v++;if(o[0]<mn)mn=o[0];if(o[0]>mx)mx=o[0];if(o[1]<mla)mla=o[1];if(o[1]>mxa)mxa=o[1];}catch(e){}}if(!v)return null;return{v,area:Math.max(1e-9,(mx-mn)*(mxa-mla))};}
+async function autoFix(pts){
+  const bad=pts.filter(p=>!isVLL(p.lng,p.lat)&&isFinite(p.rawX)&&isFinite(p.rawY));if(!bad.length)return;
+  defBuiltIn();const samp=bad.slice(0,25).map(p=>[p.rawX,p.rawY]);const minV=Math.max(5,Math.ceil(samp.length*.8));
+  const cands=['EPSG:3857','EPSG:2154'];
+  if(samp.some(([x,y])=>lutm(x,y))){for(let z=1;z<=60;z++){cands.push(defUTM(z,'N'));cands.push(defUTM(z,'S'));}}
+  let best=null;
+  for(const c of cands){try{const s=scoreCRS(samp,c);if(!s||s.v<minV)continue;const sc=(s.v*1000)-(Math.log10(s.area+1e-12)*50);if(!best||sc>best.sc)best={code:c,sc};}catch(e){}}
+  if(!best)return;
+  let fx=0;for(const p of pts){if(isVLL(p.lng,p.lat))continue;try{const o=proj4(best.code,'EPSG:4326',[p.rawX,p.rawY]);if(!isVLL(o[0],o[1]))continue;p.lng=o[0];p.lat=o[1];fx++;}catch(e){}}
+  if(fx)showToast(`Auto-proj: ${best.code} (${fx} pts fixés)`);
+}
+
+// ── KMZ LOADING ────────────────────────────────────────────────────────────
+async function loadKMLIntoLayer(kmlText,filename,idBase=0){
+  try{
+    const dom=new DOMParser().parseFromString(kmlText,'text/xml');
+    const gj=toGeoJSON.kml(dom);const rawFeats=(gj&&gj.features)||[];
+    const feats=[];
+    for(const f of rawFeats){if(f.geometry&&f.geometry.type==='GeometryCollection'){for(const g of(f.geometry.geometries||[]))feats.push({type:'Feature',geometry:g,properties:f.properties});}else feats.push(f);}
+    const pts=[];const overlays=[];
+    for(let i=0;i<feats.length;i++){
+      const f=feats[i];if(!f.geometry)continue;
+      const type=f.geometry.type;
+      if(type==='Point'||type==='MultiPoint'){const b=await buildPt(f,i,idBase);if(Array.isArray(b))b.forEach(x=>x&&pts.push(x));else if(b)pts.push(b);}
+      else overlays.push({feature:f,type});
+    }
+    await autoFix(pts);
+    for(let i=pts.length-1;i>=0;i--){if(!pts[i]||!isVLL(pts[i].lng,pts[i].lat))pts.splice(i,1);}
+    return{pts,overlays};
+  }catch(e){console.error(e);showToast('KML error: '+e.message);return null;}
+}
+
+async function addKMZLayer(file){
+  const name=file.name;const isFirst=state.kmzLayers.length===0;
+  const color=LAYER_COLORS[state.kmzLayers.length%LAYER_COLORS.length];
+  const id=state._nextLayerId++;showToast('Chargement: '+name+'…');
+  let kmlText=null;
+  try{
+    if(name.toLowerCase().endsWith('.kml'))kmlText=await file.text();
+    else if(name.toLowerCase().endsWith('.kmz')){
+      if(typeof JSZip==='undefined'){showToast('⚠ JSZip non chargé');return;}
+      const zip=await JSZip.loadAsync(file);const kmlFiles=zip.file(/\.kml$/i);if(!kmlFiles.length){showToast('No KML in KMZ');return;}
+      kmlText=await(zip.file(/doc\.kml$/i)[0]||kmlFiles[0]).async('string');
+    }else{showToast('Format non supporté');return;}
+  }catch(e){showToast('Erreur: '+e.message);return;}
+  if(!kmlText?.trim()){showToast('Fichier KML vide');return;}
+  const idBase=state._nextLayerId*100000;
+  const result=await loadKMLIntoLayer(kmlText,name,idBase);if(!result)return;
+  const{pts,overlays}=result;
+  if(!pts.length&&!overlays.length){showToast('Aucune géométrie dans '+name);return;}
+  const leafletLayer=L.layerGroup().addTo(state.map);
+  const layer={id,name:name.replace(/\.(kmz|kml)$/i,''),filename:name,visible:true,color,isMain:isFirst&&pts.length>0,leafletLayer,points:pts,overlays};
+  // Stocker la couleur du layer sur chaque point pour l'affichage "todo"
+  pts.forEach(p=>{ p._layerColor=color; });
+  state.kmzLayers.push(layer);
+  if(isFirst&&pts.length){
+    state.points=pts;state.hasFit=false;state.filterLine='';state.searchText='';state.editedOnly=false;
+    const lf=document.getElementById('lineFilter');if(lf)lf.value='';
+    refreshLineFilter();document.getElementById('downloadBtn').disabled=false;
+    const sv=loadSaved();
+    if(sv){setMeta(sv.meta||{});applyEdits(sv.pointEdits||[]);}
+    // S'assurer que la couleur du layer est bien sur chaque point après restauration
+    pts.forEach(p=>{ if(!p._layerColor)p._layerColor=color; });
+    populateLineDropdown();
+  }
+  renderAllLayers();renderLayersList();renderLineListSection();scheduleSave();
+  // Fit map
+  try{
+    const allFeats=[...pts.filter(p=>p.lat!=null).map(p=>({type:'Feature',geometry:{type:'Point',coordinates:[p.lng,p.lat]}})),...overlays.map(o=>o.feature)];
+    if(allFeats.length){const b=L.geoJSON({type:'FeatureCollection',features:allFeats}).getBounds();if(b?.isValid()){state.map.fitBounds(b.pad(.12));if(isFirst)state.hasFit=true;}}
+  }catch(e){}
+  showToast(`✓ ${layer.name} — ${pts.length} pts${overlays.length?' + '+overlays.length+' zones':''}`);
+}
+
+// ── RENDER ─────────────────────────────────────────────────────────────────
+function ptColor(p){if(p.skip)return'var(--skip)';if(p.jump)return'var(--jump)';if(p.edited)return'var(--validated)';return p._layerColor||'var(--normal)';}
+function render(){
+  if(!state.groupLayer)return;
+  state.groupLayer.clearLayers();
+  const fL=state.filterLine.trim(),fS=state.searchText.trim().toLowerCase();
+  const pts=state.points.filter(p=>{
+    if(!isVLL(p.lng,p.lat))return false;
+    if(!state.showNormal&&!p.edited&&!p.skip&&!p.jump)return false;
+    if(!state.showEdited&&p.edited&&!p.skip&&!p.jump)return false;
+    if(!state.showJump&&p.jump)return false;
+    if(!state.showSkip&&p.skip)return false;
+    if(state.editedOnly&&!p.edited)return false;
+    if(fL&&String(p.line||'').trim()!==fL)return false;
+    if(fS&&!`${dispKey(p)} ${p.comment||''} ${p.line||''}`.toLowerCase().includes(fS))return false;
+    if(state.hiddenLines.has(String(p.line||'').trim()))return false;
+    return true;
+  });
+  if(state.linesOn){
+    const byLine=new Map();pts.forEach(p=>{const k=String(p.line||'').trim();if(!k)return;if(!byLine.has(k))byLine.set(k,[]);byLine.get(k).push(p);});
+    byLine.forEach(arr=>{const s=arr.slice().sort((a,b)=>(parseInt(a.point)||0)-(parseInt(b.point)||0));if(s.length>1)L.polyline(s.map(p=>[p.lat,p.lng]),{color:'rgba(0,180,216,.3)',weight:1,dashArray:'4,4'}).addTo(state.groupLayer);});
+  }
+  pts.forEach(p=>{
+    const sel=state.selectedIds.has(p.id),col=ptColor(p);
+    const mk=L.circleMarker([p.lat,p.lng],{radius:sel?8:5,color:col,fillColor:col,fillOpacity:sel?1:.8,weight:sel?2.5:1.5});
+    mk.on('click',e=>{
+      e.originalEvent._pointClicked=true;
+      if(state.selMode){if(state.selectedIds.has(p.id))state.selectedIds.delete(p.id);else{state.selectedIds.add(p.id);state.selectedId=p.id;}}
+      else{state.selectedIds.clear();state.selectedIds.add(p.id);state.selectedId=p.id;}
+      updSelPanel();render();updateSelCount();renderPointList();
+      if(TABS[currentTab]!=='map')goToTab(TABS.indexOf('map'));
+    });
+    mk.on('contextmenu',e=>{state.pinnedLabels.has(p.id)?state.pinnedLabels.delete(p.id):state.pinnedLabels.add(p.id);render();e.originalEvent.preventDefault();});
+    const key=dispKey(p);
+    if(state.labelMode==='all'||state.pinnedLabels.has(p.id))mk.bindTooltip(key,{permanent:true,direction:'top',offset:[0,-8]});
+    else if(state.labelMode==='hover')mk.bindTooltip(key,{direction:'top',offset:[0,-8]});
+    mk.addTo(state.groupLayer);
+  });
+  // Overlays — vider d'abord puis re-dessiner avec les styles KMZ natifs
+  state.kmzLayers.forEach(layer=>{
+    if(!layer.overlays)return;
+    layer.leafletLayer.clearLayers();
+    if(!layer.visible)return;
+    layer.overlays.forEach(ov=>{
+      try{
+        const props=ov.feature.properties||{};
+        // toGeoJSON extrait déjà stroke/fill depuis les styles KML
+        const stroke=props['stroke']||props['stroke-color']||layer.color;
+        const fill=props['fill']||props['fill-color']||stroke;
+        const strokeW=parseFloat(props['stroke-width'])||2;
+        const strokeOp=parseFloat(props['stroke-opacity']??0.9);
+        const fillOp=parseFloat(props['fill-opacity']??0.25);
+        L.geoJSON(ov.feature,{
+          style:{color:stroke,fillColor:fill,weight:strokeW,opacity:strokeOp,fillOpacity:fillOp}
+        }).addTo(layer.leafletLayer);
+      }catch(e){}
+    });
+  });
+  // POI
+  state.poiLayer.clearLayers();
+  state.pois.forEach(poi=>{
+    const mk=L.marker([poi.lat,poi.lng],{icon:L.divIcon({className:'',html:`<div style="font-size:20px;text-shadow:1px 1px 2px rgba(0,0,0,.8)">${poi.icon||'📍'}</div>`,iconSize:[24,24],iconAnchor:[12,24]})});
+    mk.bindTooltip(poi.title||'POI',{direction:'top',offset:[0,-20]});mk.on('click',()=>openPoiEditor(poi));mk.addTo(state.poiLayer);
+  });
+}
+function safeRender(){if(!isRend){isRend=true;requestAnimationFrame(()=>{render();isRend=false;});}}
+function renderAllLayers(){safeRender();}
+
+// ── LINE LIST ──────────────────────────────────────────────────────────────
+function renderLineListSection(){
+  const lineMap=groupByLine();const secLines=document.getElementById('secLines');if(!secLines)return;
+  if(!lineMap.size){secLines.style.display='none';return;}
+  secLines.style.display='block';
+  document.getElementById('linesSecTitle').textContent=`LIGNES (${lineMap.size})`;
+  const container=document.getElementById('linesList');if(!container)return;
+  container.innerHTML='';
+  [...lineMap.entries()].sort((a,b)=>a[0].localeCompare(b[0],undefined,{numeric:true})).forEach(([lineName,pts])=>{
+    const total=pts.length,done=pts.filter(p=>p.edited&&!p.skip&&!p.jump).length;
+    const skip=pts.filter(p=>p.skip).length,jump=pts.filter(p=>p.jump).length,todo=total-done-skip-jump;
+    const pct=total>0?Math.round(done/total*100):0;
+    const hidden=state.hiddenLines.has(lineName),active=state.filterLine===lineName;
+    const fc=pct===100?'var(--validated)':pct>50?'var(--s3-teal)':'var(--normal)';
+    const row=document.createElement('div');
+    row.className='line-row'+(active?' active':'');
+    row.innerHTML=`<div class="line-name">L${esc(lineName)}</div><div class="line-info"><div class="line-counts">${done}/${total}${todo?` · <span style="color:var(--normal)">↻${todo}</span>`:''}${jump?` · <span style="color:var(--jump)">J${jump}</span>`:''}${skip?` · <span style="color:var(--skip)">S${skip}</span>`:''}</div><div class="line-mini-bar"><div class="line-mini-fill" style="width:${pct}%;background:${fc}"></div></div></div><button class="line-eye-btn${hidden?' hidden-line':''}" onclick="event.stopPropagation();toggleHiddenLine('${lineName.replace(/'/g,"\\'")}')" title="${hidden?'Afficher':'Masquer'}">${hidden?'🙈':'👁'}</button>`;
+    row.addEventListener('click',()=>selectLine(lineName));
+    container.appendChild(row);
+  });
+}
+
+function selectLine(lineName){
+  const pts=state.points.filter(p=>String(p.line||'').trim()===lineName).sort((a,b)=>(parseInt(a.point)||0)-(parseInt(b.point)||0));
+  if(!pts.length){showToast('Aucun point pour cette ligne.');return;}
+  state.selectedIds.clear();pts.forEach(p=>state.selectedIds.add(p.id));state.selectedId=pts[0].id;
+  state.filterLine=lineName;
+  const lf=document.getElementById('lineFilter');if(lf)lf.value=lineName;
+  const ld=document.getElementById('lineSelectDropdown');if(ld)ld.value=lineName;
+  updSelPanel();render();updateSelCount();renderPointList();
+  // Scroll to edit section on mobile
+  if(window.innerWidth<=767){const editSec=document.querySelector('#tab-map .sep');if(editSec)editSec.scrollIntoView({behavior:'smooth',block:'start'});}
+  showToast(`Ligne ${lineName} — ${pts.length} pts sélectionnés`);
+}
+
+function selectAllLines(){state.points.forEach(p=>state.selectedIds.add(p.id));if(state.points.length)state.selectedId=state.points[0].id;updSelPanel();render();updateSelCount();renderPointList();}
+function clearLineSelection(){state.selectedIds.clear();state.selectedId=null;state.filterLine='';const lf=document.getElementById('lineFilter');if(lf)lf.value='';updSelPanel();render();updateSelCount();renderPointList();}
+function toggleHiddenLine(l){state.hiddenLines.has(l)?state.hiddenLines.delete(l):state.hiddenLines.add(l);render();renderLineListSection();}
+
+// ── LINE DROPDOWN ──────────────────────────────────────────────────────────
+function populateLineDropdown(){
+  const sel=document.getElementById('lineSelectDropdown');if(!sel)return;
+  const cur=sel.value;
+  const lines=[...new Set(state.points.filter(p=>p.line).map(p=>String(p.line).trim()))].sort((a,b)=>parseInt(a)-parseInt(b)||a.localeCompare(b));
+  sel.innerHTML='<option value="">— Choisir —</option>';
+  lines.forEach(l=>{const o=document.createElement('option');o.value=l;o.textContent='Ligne '+l;if(l===cur)o.selected=true;sel.appendChild(o);});
+}
+function onLineDropdownChange(line){if(!line||!state.points.length)return;selectLine(line);}
+function applyLineFilter(){const v=(document.getElementById('lineFilter')?.value||'').trim();state.filterLine=v;render();renderLineListSection();}
+
+// ── STATUS ─────────────────────────────────────────────────────────────────
+function setStatus(s){
+  state.curStatus=s;if(s!=='skip')state.curReason='';
+  const bT=document.getElementById('btn-todo'),bD=document.getElementById('btn-done'),bJ=document.getElementById('btn-jump'),bS=document.getElementById('btn-skip');
+  if(bT)bT.className='sbtn'+(s==='todo'?' stodo':'');
+  if(bD){if(s==='done'){bD.style.background='var(--validated)';bD.style.color='#000';bD.style.borderColor='var(--validated)';}else{bD.style.background='var(--panel)';bD.style.color='var(--validated)';bD.style.borderColor='var(--validated)';}}
+  if(bJ)bJ.className='sbtn'+(s==='jump'?' sj':'');
+  if(bS)bS.className='sbtn'+(s==='skip'?' ss':'');
+  document.getElementById('skipReasonBlock').style.display=s==='skip'?'block':'none';
+  if(s==='skip')buildReasonList();
+}
+function buildReasonList(){const h=document.getElementById('reasonList');if(!h)return;const reasons=state.mode==='layout'?SKIP_REASONS_LAYOUT:SKIP_REASONS_PICKUP;h.innerHTML=reasons.map(r=>`<div class="ri${state.curReason===r?' sel':''}" onclick="pickReason('${r.replace(/'/g,"\\'")}')">${r}</div>`).join('');}
+function pickReason(r){state.curReason=r;buildReasonList();}
+
+// ── EDIT PANEL ─────────────────────────────────────────────────────────────
+function updSelPanel(){
+  const p=state.selectedId!=null?state.points.find(x=>x.id===state.selectedId):null;
+  const commentEl=document.getElementById('selComment');if(commentEl)commentEl.value=p?p.comment||'':'';
+  document.getElementById('selCardName').textContent=p?dispKey(p):'—';
+  document.getElementById('selCardSub').textContent=p?`L${p.line||'?'} · P${p.point||'?'} · ${p.lat!=null?p.lat.toFixed(5)+', '+p.lng.toFixed(5):''}` : 'Tap un point sur la carte';
+  const badge=document.getElementById('selCardBadge');
+  if(badge){if(p&&(p.skip||p.jump||p.edited)){badge.style.display='inline-flex';if(p.skip){badge.style.background='var(--skip)';badge.style.color='#fff';badge.textContent='SKIP';}else if(p.jump){badge.style.background='var(--jump)';badge.style.color='#000';badge.textContent=state.mode==='pickup'?'MISSING':'JUMP';}else{badge.style.background='var(--validated)';badge.style.color='#000';badge.textContent=state.mode==='layout'?'LAID':'PICKED';}}else badge.style.display='none';}
+  const applyBtn=document.getElementById('applyEdit');if(applyBtn)applyBtn.disabled=state.selectedIds.size===0;
+  if(p){if(p.skip)setStatus('skip');else if(p.jump)setStatus('jump');else if(p.edited)setStatus('done');else setStatus('todo');}
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('applyEdit')?.addEventListener('click',applyChanges);
+  document.getElementById('clearSel')?.addEventListener('click',()=>{state.selectedIds.clear();state.selectedId=null;updSelPanel();render();updateSelCount();renderPointList();});
+  document.getElementById('searchFilter')?.addEventListener('input',e=>{state.searchText=e.target.value;safeRender();scheduleSave();});
+  document.getElementById('lineFilter')?.addEventListener('change',()=>{applyLineFilter();scheduleSave();});
+  document.getElementById('showEditedOnly')?.addEventListener('change',e=>{state.editedOnly=e.target.checked;safeRender();scheduleSave();});
+  document.getElementById('toggleLines')?.addEventListener('change',e=>{state.linesOn=e.target.checked;safeRender();});
+});
+
+function applyChanges(){
+  if(!state.selectedIds.size)return;
+  const comment=document.getElementById('selComment')?.value||'';
+  const s=state.curStatus;
+  state.selectedIds.forEach(id=>{const p=state.points.find(x=>x.id===id);if(!p)return;p.comment=comment;p.skip=s==='skip';p.jump=s==='jump';p.skipReason=s==='skip'?state.curReason:'';p.edited=s!=='todo';});
+  updSelPanel();render();updateCount();renderPointList();renderLineListSection();
+  if(TABS[currentTab]==='stats')updateStats();
+  scheduleSave();showToast(`✓ ${state.selectedIds.size} point(s) mis à jour`);
+}
+
+// ── POINT LIST ─────────────────────────────────────────────────────────────
+function renderPointList(){
+  const container=document.getElementById('pointList');if(!container)return;
+  const fL=state.filterLine.trim();
+  const pts=state.points.filter(p=>isVLL(p.lng,p.lat)&&(!fL||String(p.line||'').trim()===fL)).sort((a,b)=>(parseInt(a.point)||0)-(parseInt(b.point)||0)).slice(0,200);
+  container.innerHTML=pts.map(p=>{
+    const col=ptColor(p),sel=state.selectedIds.has(p.id);
+    const label=p.edited?(p.skip?'SKIP':p.jump?(state.mode==='pickup'?'MISS':'JUMP'):(state.mode==='layout'?'LAID':'PICK')):'';
+    return`<div class="pt-row${sel?' selected':''}" onclick="clickPointList(${p.id})"><div class="pt-dot" style="background:${col}"></div><span class="pt-name">${esc(dispKey(p))}</span>${label?`<span class="pt-badge" style="background:${col}">${label}</span>`:''}</div>`;
+  }).join('');
+}
+function clickPointList(id){
+  if(state.selMode){if(state.selectedIds.has(id))state.selectedIds.delete(id);else{state.selectedIds.add(id);state.selectedId=id;}}
+  else{state.selectedIds.clear();state.selectedIds.add(id);state.selectedId=id;}
+  updSelPanel();render();updateSelCount();renderPointList();
+  const p=state.points.find(x=>x.id===id);if(p?.lat&&state.map)state.map.setView([p.lat,p.lng],state.map.getZoom());
+}
+function selectAllPoints(){const fL=state.filterLine.trim();state.points.filter(p=>!fL||String(p.line||'').trim()===fL).forEach(p=>state.selectedIds.add(p.id));if(state.points.length)state.selectedId=state.points.filter(p=>!fL||String(p.line||'').trim()===fL)[0]?.id;updSelPanel();render();updateSelCount();renderPointList();}
+function selectNPoints(n){state.points.filter(p=>isVLL(p.lng,p.lat)).slice(0,n).forEach(p=>{state.selectedIds.add(p.id);state.selectedId=p.id;});updSelPanel();render();updateSelCount();renderPointList();}
+function clearPointSelection(){state.selectedIds.clear();state.selectedId=null;updSelPanel();render();updateSelCount();renderPointList();}
+
+// ── STATS ──────────────────────────────────────────────────────────────────
+function updateStats(){
+  const pts=state.points,total=pts.length;
+  const done=pts.filter(p=>p.edited&&!p.skip&&!p.jump).length;
+  const jump=pts.filter(p=>p.jump).length,skip=pts.filter(p=>p.skip).length;
+  const todo=pts.filter(p=>!p.edited&&!p.skip&&!p.jump).length;
+  const pct=n=>total?((n/total)*100).toFixed(1):'0';
+  const pctInt=n=>total?Math.round(n/total*100):0;
+
+  // Totals
+  document.getElementById('stTotal').textContent=total;
+  document.getElementById('stProgLbl').textContent=`${done} / ${total}`;
+  document.getElementById('stProgFill').style.width=pct(done)+'%';
+
+  // 4 counters
+  document.getElementById('stDone').textContent=done;
+  document.getElementById('stDonePct').textContent=pct(done)+'%';
+  document.getElementById('stTodo').textContent=todo;
+  document.getElementById('stTodoPct').textContent=pct(todo)+'%';
+  document.getElementById('stJump').textContent=jump;
+  document.getElementById('stJumpPct').textContent=pct(jump)+'%';
+  document.getElementById('stSkip').textContent=skip;
+  document.getElementById('stSkipPct').textContent=pct(skip)+'%';
+
+  // Mode banner pct
+  const modePct=document.getElementById('statModePct');
+  if(modePct)modePct.textContent=pctInt(done)+'%';
+
+  // Skip reasons
+  const reasons={};pts.forEach(p=>{if(p.skip&&p.skipReason)reasons[p.skipReason]=(reasons[p.skipReason]||0)+1;});
+  const re=Object.entries(reasons);const sb=document.getElementById('stSkipBlock');
+  if(sb){
+    if(re.length){sb.style.display='block';document.getElementById('stSkipList').innerHTML=re.sort((a,b)=>b[1]-a[1]).map(([r,n])=>`<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:11px;border-bottom:1px solid var(--border)"><span>${r}</span><span style="background:var(--skip);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px">${n}</span></div>`).join('');}
+    else sb.style.display='none';
+  }
+
+  // Per-line stats
+  const lineMap=groupByLine();const secLS=document.getElementById('secLineStats');
+  if(secLS&&lineMap.size>0){
+    secLS.style.display='block';
+    document.getElementById('lineStatsList').innerHTML=[...lineMap.entries()].sort((a,b)=>a[0].localeCompare(b[0],undefined,{numeric:true})).map(([n,lpts])=>{
+      const lt=lpts.length,ld=lpts.filter(p=>p.edited&&!p.skip&&!p.jump).length,ls=lpts.filter(p=>p.skip).length,lj=lpts.filter(p=>p.jump).length;
+      const lp=lt?Math.round(ld/lt*100):0;
+      const fc=lp===100?'var(--validated)':lp>50?'var(--s3-teal)':'var(--normal)';
+      return`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;margin-bottom:4px">
+        <div style="min-width:50px;font-size:12px;font-weight:800;font-family:'Saira Condensed',sans-serif;color:var(--text)">L${esc(n)}</div>
+        <div style="flex:1">
+          <div style="font-size:10px;color:var(--muted2)">${ld}/${lt}${ls?` · <span style="color:var(--skip)">S${ls}</span>`:''}${lj?` · <span style="color:var(--jump)">J${lj}</span>`:''}</div>
+          <div class="pbar" style="margin:2px 0;height:3px"><div style="height:100%;width:${lp}%;background:${fc};border-radius:3px;transition:width .3s"></div></div>
+        </div>
+        <div style="font-size:13px;font-weight:700;font-family:'Saira Condensed',sans-serif;color:${fc}">${lp}%</div>
+      </div>`;
+    }).join('');
+  }else if(secLS)secLS.style.display='none';
+}
+
+// ── COUNTS ─────────────────────────────────────────────────────────────────
+function updateCount(){
+  const p=state.points;
+  document.getElementById('count').textContent=p.length;
+  document.getElementById('cN').textContent=p.filter(x=>!x.edited&&!x.skip&&!x.jump).length;
+  document.getElementById('cJ').textContent=p.filter(x=>x.jump).length;
+  document.getElementById('cS').textContent=p.filter(x=>x.skip).length;
+  document.getElementById('cE').textContent=p.filter(x=>x.edited&&!x.skip&&!x.jump).length;
+}
+
+// ── PILL FILTERS ───────────────────────────────────────────────────────────
+function togglePillFilter(type){
+  const map={normal:'showNormal',jump:'showJump',skip:'showSkip',edited:'showEdited'};
+  const key=map[type];if(!key)return;state[key]=!state[key];
+  const pid={normal:'pillN',jump:'pillJ',skip:'pillS',edited:'pillE'}[type];
+  const pill=document.getElementById(pid);if(pill)pill.style.opacity=state[key]?'1':'0.35';
+  safeRender();
+}
+
+// ── LABEL MODE ─────────────────────────────────────────────────────────────
+function setLabelMode(m){
+  state.labelMode=m;
+  document.getElementById('lblHover').style.cssText=m==='hover'?'flex:1;font-size:11px;padding:6px 4px;border-radius:8px;background:#0a2030;color:var(--normal);border:1px solid var(--normal)':'flex:1;font-size:11px;padding:6px 4px;border-radius:8px;background:var(--panel2);color:var(--muted);border:1px solid var(--border2)';
+  document.getElementById('lblAll').style.cssText=m==='all'?'flex:1;font-size:11px;padding:6px 4px;border-radius:8px;background:#0a2030;color:var(--normal);border:1px solid var(--normal)':'flex:1;font-size:11px;padding:6px 4px;border-radius:8px;background:var(--panel2);color:var(--muted);border:1px solid var(--border2)';
+  safeRender();
+}
+
+// ── LAYERS ─────────────────────────────────────────────────────────────────
+function renderLayersList(){
+  const c=document.getElementById('layersList');if(!c)return;
+  if(!state.kmzLayers.length){c.innerHTML='<div style="text-align:center;padding:30px 10px;color:var(--muted);font-size:12px"><div style="font-size:32px;margin-bottom:8px;opacity:.3">📂</div>Aucune couche chargée.</div>';return;}
+  c.innerHTML=state.kmzLayers.map(l=>`<div class="layer-item" style="border-left:3px solid ${l.color}"><div class="layer-name-row"><div class="layer-label">${esc(l.name)}</div><button style="padding:3px 7px;font-size:12px;cursor:pointer;background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--muted)" onclick="toggleLayerVis(${l.id})">${l.visible?'👁':'🙈'}</button><button style="padding:3px 7px;font-size:11px;cursor:pointer;background:transparent;border:1px solid #6e1a1a;border-radius:5px;color:var(--skip)" onclick="removeLayer(${l.id})">✕</button></div><div style="font-size:10px;color:var(--muted);margin-top:4px">${l.points.length} pts${l.isMain?' · <b style="color:var(--s3-cyan)">Principale</b>':''}</div>${!l.isMain?`<button onclick="setMainLayer(${l.id})" style="margin-top:6px;font-size:10px;padding:4px 8px;border:1px solid var(--border2);border-radius:5px;background:var(--panel);color:var(--s3-teal);cursor:pointer">Définir comme principale</button>`:''}</div>`).join('');
+}
+function toggleLayerVis(id){const l=state.kmzLayers.find(x=>x.id===id);if(!l)return;l.visible=!l.visible;if(l.isMain){if(l.visible)state.groupLayer.addTo(state.map);else state.map.removeLayer(state.groupLayer);}renderAllLayers();renderLayersList();}
+function removeLayer(id){
+  const idx=state.kmzLayers.findIndex(x=>x.id===id);if(idx<0)return;
+  const l=state.kmzLayers[idx];
+  if(l.isMain){state.points=[];updateCount();document.getElementById('downloadBtn').disabled=true;refreshLineFilter();document.getElementById('secLines').style.display='none';}
+  try{state.map.removeLayer(l.leafletLayer);}catch(e){}
+  state.kmzLayers.splice(idx,1);
+  if(l.isMain&&state.kmzLayers.length){state.kmzLayers[0].isMain=true;state.points=state.kmzLayers[0].points;refreshLineFilter();document.getElementById('downloadBtn').disabled=false;}
+  renderAllLayers();renderLayersList();renderLineListSection();scheduleSave();
+}
+function setMainLayer(id){
+  state.kmzLayers.forEach(l=>l.isMain=(l.id===id));const main=state.kmzLayers.find(l=>l.id===id);
+  if(main){state.points=main.points;state.hasFit=false;state.filterLine='';refreshLineFilter();document.getElementById('downloadBtn').disabled=false;}
+  renderAllLayers();renderLayersList();renderLineListSection();scheduleSave();
+}
+
+// ── POI ────────────────────────────────────────────────────────────────────
+let _editingPoi=null,_pendingPoiLL=null;
+function openPoiEditor(poi,latlng){_editingPoi=poi;_pendingPoiLL=latlng||null;document.getElementById('poiModalTitle').textContent=poi?'Modifier POI':'Nouveau POI';document.getElementById('poiTitle').value=poi?poi.title||'':'';document.getElementById('poiComment').value=poi?poi.comment||'':'';document.getElementById('poiDeleteBtn').style.display=poi?'inline-flex':'none';document.getElementById('poiOverlay').style.display='flex';}
+function closePoiEditor(){document.getElementById('poiOverlay').style.display='none';_editingPoi=null;_pendingPoiLL=null;}
+function savePoi(){const title=document.getElementById('poiTitle').value.trim(),comment=document.getElementById('poiComment').value.trim();if(_editingPoi){_editingPoi.title=title;_editingPoi.comment=comment;}else if(_pendingPoiLL){state.pois.push({id:Date.now().toString(),title,comment,lat:_pendingPoiLL.lat,lng:_pendingPoiLL.lng,icon:'📍'});}closePoiEditor();render();renderPoiList();scheduleSave();}
+function deletePoi(){if(_editingPoi){const idx=state.pois.findIndex(p=>p.id===_editingPoi.id);if(idx>=0)state.pois.splice(idx,1);}closePoiEditor();render();renderPoiList();scheduleSave();}
+function renderPoiList(){const c=document.getElementById('poiList'),e=document.getElementById('poiEmpty');if(!c)return;c.innerHTML=state.pois.map(poi=>`<div class="poi-row" onclick="openPoiEditor(${JSON.stringify(poi).replace(/"/g,'&quot;')})"><span style="font-size:18px">${poi.icon||'📍'}</span><div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--text)">${esc(poi.title||'POI')}</div>${poi.comment?`<div style="font-size:10px;color:var(--muted)">${esc(poi.comment)}</div>`:''}</div></div>`).join('');if(e)e.style.display=state.pois.length?'none':'block';}
+
+// ── CSV EXPORT ─────────────────────────────────────────────────────────────
+function downloadCSV(){
+  const m=getMeta(),mode=state.mode.toUpperCase();
+  let rows=[`# S3 ${mode} Report — ${m.date}`,`# Mode,${mode}`,`# Team Lead,${m.crewLead}`,`# Op1,${m.crew1}`,`# Op2,${m.crew2}`,`# Op3,${m.crew3}`,`# Op4,${m.crew4}`,'','station,line,point,lat,lng,status,comment,skip_reason'];
+  state.points.forEach(p=>{const status=p.skip?'skip':p.jump?(state.mode==='pickup'?'missing':'jump'):p.edited?(state.mode==='layout'?'laid':'picked'):'todo';rows.push([dispKey(p),p.line,p.point,p.lat?.toFixed(6)||'',p.lng?.toFixed(6)||'',status,`"${(p.comment||'').replace(/"/g,'""')}"`,p.skipReason||''].join(','));});
+  const blob=new Blob([rows.join('\n')],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`LP_${m.date||'nodate'}_${mode}.csv`;a.click();URL.revokeObjectURL(url);
+}
+
+// ── PERSISTENCE ────────────────────────────────────────────────────────────
+function getMeta(){return{date:document.getElementById('dateInput')?.value||'',crewLead:document.getElementById('crewLead')?.value||'',crew1:document.getElementById('crew1')?.value||'',crew2:document.getElementById('crew2')?.value||'',crew3:document.getElementById('crew3')?.value||'',crew4:document.getElementById('crew4')?.value||'',mode:state.mode};}
+function setMeta(m){if(!m)return;if(document.getElementById('dateInput'))document.getElementById('dateInput').value=m.date||'';['crewLead','crew1','crew2','crew3','crew4'].forEach(id=>{if(document.getElementById(id))document.getElementById(id).value=m[id]||'';});if(m.mode)setMode(m.mode);}
+let saveTimer=null;
+function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,400);}
+function saveNow(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify({v:2,meta:getMeta(),pois:state.pois||[],mode:state.mode,pointEdits:(state.points||[]).filter(p=>p.comment||p.skip||p.jump||p.edited).map(p=>({uid:p.uid,comment:p.comment||'',skip:!!p.skip,jump:!!p.jump,skipReason:p.skipReason||'',edited:!!p.edited}))}));}catch(e){}}
+function loadSaved(){try{const r=localStorage.getItem(STORAGE_KEY);return r?JSON.parse(r):null;}catch(e){return null;}}
+function applyEdits(edits){if(!edits?.length||!state.points.length)return 0;const map=new Map();edits.forEach(e=>{if(e?.uid)map.set(String(e.uid),e);});let n=0;state.points.forEach(p=>{const e=map.get(String(p.uid));if(!e)return;p.comment=e.comment||'';p.skip=!!e.skip;p.jump=!!e.jump;p.skipReason=e.skipReason||'';p.edited=true;n++;});return n;}
+
+// ── CLEAR ALL — appui long ─────────────────────────────────────────────────
+function wireClearBtn(){
+  const btn=document.getElementById('clearBtn');
+  const prog=document.getElementById('clearAllProgress');
+  if(!btn||!prog)return;
+  let holdTimer=null;
+  const HOLD_MS=900;
+  const startHold=()=>{
+    prog.style.transition=`width ${HOLD_MS}ms linear`;
+    prog.style.width='100%';
+    btn.style.color='var(--skip)';
+    holdTimer=setTimeout(()=>{
+      execClearAll();
+      prog.style.transition='none';prog.style.width='0%';
+      btn.style.color='rgba(255,107,107,.5)';
+    },HOLD_MS);
+  };
+  const cancelHold=()=>{
+    clearTimeout(holdTimer);
+    prog.style.transition='none';prog.style.width='0%';
+    btn.style.color='rgba(255,107,107,.5)';
+  };
+  btn.addEventListener('mousedown',startHold);
+  btn.addEventListener('touchstart',startHold,{passive:true});
+  btn.addEventListener('mouseup',cancelHold);
+  btn.addEventListener('mouseleave',cancelHold);
+  btn.addEventListener('touchend',cancelHold);
+}
+function execClearAll(){
+  state.points=[];
+  state.kmzLayers.forEach(l=>{try{state.map.removeLayer(l.leafletLayer);}catch(e){}});
+  state.kmzLayers=[];
+  state.pois=[];state.selectedIds.clear();state.selectedId=null;
+  state.hiddenLines.clear();state.hasFit=false;state.filterLine='';
+  if(state.groupLayer)state.groupLayer.clearLayers();
+  if(state.poiLayer)state.poiLayer.clearLayers();
+  renderLayersList();renderPoiList();renderLineListSection();
+  updSelPanel();updateCount();updateSelCount();renderPointList();
+  const dl=document.getElementById('downloadBtn');if(dl)dl.disabled=true;
+  const sl=document.getElementById('secLines');if(sl)sl.style.display='none';
+  try{localStorage.removeItem(STORAGE_KEY);}catch(e){}
+  showToast('✓ Toutes les données effacées.');
+}
+
+// ── FILE INPUTS + WIRING ───────────────────────────────────────────────────
+function wireAll(){
+  ['fileInput','fileInput2'].forEach(id=>{
+    document.getElementById(id)?.addEventListener('change',async e=>{
+      for(const f of e.target.files)await addKMZLayer(f);
+      e.target.value='';
+    });
+  });
+  document.body.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='copy';});
+  document.body.addEventListener('drop',async e=>{
+    e.preventDefault();
+    for(const f of e.dataTransfer.files){if(f.name.match(/\.(kmz|kml)$/i))await addKMZLayer(f);}
+  });
+  document.getElementById('downloadBtn')?.addEventListener('click',downloadCSV);
+  wireClearBtn();
+  ['dateInput','crewLead','crew1','crew2','crew3','crew4'].forEach(id=>
+    document.getElementById(id)?.addEventListener('change',()=>scheduleSave())
+  );
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  const d=document.getElementById('dateInput');if(d&&!d.value)d.value=todayISO();
+  initMap();wireAll();
+  // Restauration immédiate : crew, mode, POIs (les édits points seront appliqués au chargement KMZ)
+  const sv=loadSaved();
+  if(sv){
+    setMeta(sv.meta||{});
+    if(Array.isArray(sv.pois))state.pois=sv.pois;
+    renderPoiList();
+    if(sv.pois?.length)render(); // afficher les POIs même sans KMZ
+  }
+  goToTab(0,false);
+  window.addEventListener('resize',()=>{
+    const track=document.getElementById('tabtrack'),panel=document.querySelector('.panel');
+    if(track&&panel){const w=panel.offsetWidth;if(window.innerWidth<=767)track.querySelectorAll('.tab').forEach(t=>{t.style.flexBasis=w+'px';t.style.width=w+'px';});track.style.transition='none';track.style.transform=`translateX(-${currentTab*w}px)`;setTimeout(()=>{if(track)track.style.transition='';},50);}
+    if(state.map)state.map.invalidateSize();
+  });
+});
+</script>
+</body>
+</html>
