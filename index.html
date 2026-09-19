@@ -2067,11 +2067,10 @@ function getMeta(){
 }
 function setMeta(m){
   if(!m)return;
-  // Date : garder celle sauvegardée seulement si c'est aujourd'hui, sinon mettre à jour
-  if($('#dateInput')&&m.date){
-    const today=todayISO();
-    $('#dateInput').value=(m.date>=today)?m.date:today;
-  }
+  // Date du rapport : toujours restaurée telle quelle.
+  // La bascule vers aujourd'hui se fait au démarrage, uniquement
+  // si la session est vide (voir DOMContentLoaded).
+  if($('#dateInput')&&m.date)$('#dateInput').value=m.date;
   if($('#teamInput')){$('#teamInput').value=m.team||'';applyTeamColor(m.team||'');}
   if($('#crewLead'))$('#crewLead').value=m.crewLead||'';
   if(m.geoLoaded&&$('#geoLoadedInput')){$('#geoLoadedInput').value=m.geoLoaded;updateGeoCount();}
@@ -2538,6 +2537,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   const sv=loadSaved();
   if(sv){
     setMeta(sv.meta||{});
+    // Nouveau jour : on ne repasse à la date du jour QUE si aucune saisie
+    // n'a été faite. Sinon on conserve la date du rapport en cours.
+    const di=$('#dateInput');
+    const hasWork=(sv.pointEdits&&sv.pointEdits.length>0)||(sv.lostItems&&sv.lostItems.length>0);
+    if(di&&di.value&&di.value<todayISO()&&!hasWork)di.value=todayISO();
     if(Array.isArray(sv.lostItems)){
       lostItems=sv.lostItems;
       _lostNextId=lostItems.reduce((m,x)=>Math.max(m,x.id||0),0)+1;
