@@ -54,7 +54,9 @@ self.addEventListener('fetch', event => {
             key: key,
             type: isFile ? (value.type || 'sans-type') : 'texte',
             name: isFile ? (value.name || 'sans-nom') : undefined,
-            size: isFile ? value.size : undefined
+            size: isFile ? value.size : undefined,
+            // Contenu des champs texte (tronqué) pour diagnostic
+            value: isFile ? undefined : String(value).slice(0, 200)
           });
           // Premier fichier non vide, quel que soit le nom du champ
           if (isFile && !file && value.size > 0) file = value;
