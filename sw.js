@@ -1,23 +1,20 @@
 /* ══════════════════════════════════════════════════════════════════
-   S³ Layout / Pick-Up Report — Service Worker
-   • Rend l'app installable sur Android (Chrome exige un SW + fetch)
-   • Cache offline en "network-first" : toujours la dernière version
-     quand il y a du réseau, le cache sert uniquement de secours
+   S³ Layout / Pick-Up Report — Service Worker v2
+   • Rend l'app installable sur Android
+   • Cache offline network-first
    • Intercepte le partage WhatsApp (Web Share Target)
    ══════════════════════════════════════════════════════════════════ */
 
 const CACHE_NAME = 'lp-report-v1';
-const SHARE_KEY  = '/__shared-kmz__';   // clé du fichier partagé dans le cache
+const SHARE_KEY  = '/__shared-kmz__';
+const DEBUG_KEY  = '/__share-debug__';
 
 /* ── INSTALL ─────────────────────────────────────────────────────── */
-self.addEventListener('install', event => {
-  self.skipWaiting();                    // active la nouvelle version tout de suite
-});
+self.addEventListener('install', () => self.skipWaiting());
 
 /* ── ACTIVATE ────────────────────────────────────────────────────── */
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
-    // Purge les anciens caches
     const names = await caches.keys();
     await Promise.all(
       names.filter(n => n !== CACHE_NAME).map(n => caches.delete(n))
@@ -26,23 +23,43 @@ self.addEventListener('activate', event => {
   })());
 });
 
+/* ── Trace de diagnostic lisible par l'app ───────────────────────── */
+async function writeDebug(obj) {
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.put(DEBUG_KEY, new Response(JSON.stringify(obj), {
+      headers: { 'Content-Type': 'application/json' }
+    }));
+  } catch (e) { /* ignore */ }
+}
+
 /* ── FETCH ───────────────────────────────────────────────────────── */
 self.addEventListener('fetch', event => {
   const req = event.request;
   const url = new URL(req.url);
 
-  /* ---- 1. Partage WhatsApp : POST sur ./share-target/ ---- */
-  if (req.method === 'POST' && url.pathname.endsWith('/share-target/')) {
+  /* ---- 1. Partage entrant : tout POST contenant "share-target" ---- */
+  const isShare = req.method === 'POST' && url.pathname.indexOf('share-target') !== -1;
+
+  if (isShare) {
     event.respondWith((async () => {
+      const dbg = { at: new Date().toISOString(), path: url.pathname, fields: [], stored: false };
       try {
         const formData = await req.formData();
-        let file = formData.get('kmzfile');
-        if (!file || typeof file === 'string') {
-          // Certaines apps envoient le fichier sous un autre nom de champ
-          for (const value of formData.values()) {
-            if (value && typeof value !== 'string') { file = value; break; }
-          }
+
+        let file = null;
+        for (const [key, value] of formData.entries()) {
+          const isFile = value && typeof value !== 'string';
+          dbg.fields.push({
+            key: key,
+            type: isFile ? (value.type || 'sans-type') : 'texte',
+            name: isFile ? (value.name || 'sans-nom') : undefined,
+            size: isFile ? value.size : undefined
+          });
+          // Premier fichier non vide, quel que soit le nom du champ
+          if (isFile && !file && value.size > 0) file = value;
         }
+
         if (file) {
           const cache = await caches.open(CACHE_NAME);
           const headers = new Headers({
@@ -50,20 +67,34 @@ self.addEventListener('fetch', event => {
             'X-Filename': encodeURIComponent(file.name || 'shared.kmz')
           });
           await cache.put(SHARE_KEY, new Response(file, { headers }));
+          dbg.stored = true;
+          dbg.storedName = file.name;
+          dbg.storedSize = file.size;
+        } else {
+          dbg.error = 'aucun fichier recu dans le partage';
         }
       } catch (err) {
-        // On redirige quand même pour ne pas bloquer l'utilisateur
+        dbg.error = 'formData: ' + (err && err.message ? err.message : String(err));
       }
+
+      await writeDebug(dbg);
+
+      // Prévient l'app si elle tourne déjà
+      try {
+        const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        clients.forEach(c => c.postMessage({ type: 'SHARED_FILE_READY' }));
+      } catch (e) { /* ignore */ }
+
       return Response.redirect(self.registration.scope + '?shared=1', 303);
     })());
     return;
   }
 
-  /* ---- 2. Requêtes GET : network-first, cache en secours ---- */
+  /* ---- 2. GET : network-first, cache en secours ---- */
   if (req.method !== 'GET') return;
-
-  // On ne met en cache que notre propre origine (pas les tuiles de carte)
   if (url.origin !== self.location.origin) return;
+  if (url.pathname.indexOf('__shared-kmz__') !== -1) return;
+  if (url.pathname.indexOf('__share-debug__') !== -1) return;
 
   event.respondWith((async () => {
     try {
@@ -74,10 +105,8 @@ self.addEventListener('fetch', event => {
       }
       return fresh;
     } catch (err) {
-      // Hors ligne : on sert le cache
       const cached = await caches.match(req);
       if (cached) return cached;
-      // Navigation hors ligne sans cache exact → on sert la page d'accueil
       if (req.mode === 'navigate') {
         const home = await caches.match(self.registration.scope);
         if (home) return home;
