@@ -2627,6 +2627,7 @@ async function loadSharedFile(){
         msg+='\nChamps reçus ('+(dbg.fields?dbg.fields.length:0)+') :\n';
         (dbg.fields||[]).forEach(f=>{
           msg+='  • '+f.key+' — '+f.type+(f.name?' — '+f.name:'')+(f.size!==undefined?' — '+f.size+' o':'')+'\n';
+          if(f.value)msg+='     = '+f.value+'\n';
         });
       }
       alert(msg);
