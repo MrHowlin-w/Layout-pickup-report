@@ -7,11 +7,17 @@
   "scope": "./",
   "id": "s3-layout-pickup-report",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "any",
   "background_color": "#060d14",
   "theme_color": "#060d14",
-  "categories": ["productivity", "utilities"],
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "./icon-192.png",
@@ -43,12 +49,7 @@
         {
           "name": "kmzfile",
           "accept": [
-            "application/vnd.google-earth.kmz",
-            "application/vnd.google-earth.kml+xml",
-            "application/octet-stream",
-            "application/zip",
-            ".kmz",
-            ".kml"
+            "*/*"
           ]
         }
       ]
@@ -58,8 +59,12 @@
     {
       "action": "./",
       "accept": {
-        "application/vnd.google-earth.kmz": [".kmz"],
-        "application/vnd.google-earth.kml+xml": [".kml"]
+        "application/vnd.google-earth.kmz": [
+          ".kmz"
+        ],
+        "application/vnd.google-earth.kml+xml": [
+          ".kml"
+        ]
       }
     }
   ]
