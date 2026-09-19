@@ -2567,6 +2567,8 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 // ── SERVICE WORKER + PARTAGE WHATSAPP ───────────────────────────────────────
 const SHARE_KEY='/__shared-kmz__';
+const DEBUG_KEY='/__share-debug__';
+let _sharedLoading=false;
 
 // Enregistrement du service worker (requis pour l'installation Android)
 if('serviceWorker' in navigator){
@@ -2574,35 +2576,87 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('./sw.js')
       .catch(e=>console.warn('SW registration failed:',e));
   });
+  // Le SW prévient quand un fichier partagé est prêt
+  navigator.serviceWorker.addEventListener('message',e=>{
+    if(e.data&&e.data.type==='SHARED_FILE_READY')loadSharedFile();
+  });
+}
+
+// Lit la trace de diagnostic laissée par le service worker
+async function readShareDebug(){
+  try{
+    const cache=await caches.open('lp-report-v1');
+    const res=await cache.match(DEBUG_KEY);
+    if(!res)return null;
+    return await res.json();
+  }catch(e){return null;}
 }
 
 // Récupération d'un fichier partagé depuis WhatsApp (ou autre app)
 async function loadSharedFile(){
+  if(_sharedLoading)return;
+  _sharedLoading=true;
   try{
+    // Attendre que le service worker soit actif
+    if('serviceWorker' in navigator){
+      try{await navigator.serviceWorker.ready;}catch(e){}
+    }
+
+    // Réessayer jusqu'à 10 fois (5 s) : le POST peut arriver après la page
+    let res=null;
     const cache=await caches.open('lp-report-v1');
-    const res=await cache.match(SHARE_KEY);
-    if(!res)return;
+    for(let i=0;i<10;i++){
+      res=await cache.match(SHARE_KEY);
+      if(res)break;
+      await new Promise(r=>setTimeout(r,500));
+    }
+
+    if(!res){
+      const dbg=await readShareDebug();
+      console.warn('[Partage] Aucun fichier en cache. Diagnostic:',dbg);
+      if(dbg&&dbg.error)showToast('⚠ Partage: '+dbg.error,7000);
+      else if(dbg&&dbg.fields&&dbg.fields.length)showToast('⚠ Partage reçu mais fichier illisible',7000);
+      else showToast('⚠ Le partage n\'a pas atteint l\'application',7000);
+      history.replaceState({},'',location.pathname);
+      return;
+    }
+
+    // Attendre que la carte soit prête
+    for(let i=0;i<20&&!state.map;i++)await new Promise(r=>setTimeout(r,200));
+
     const blob=await res.blob();
     const name=decodeURIComponent(res.headers.get('X-Filename')||'shared.kmz');
     await cache.delete(SHARE_KEY);
-    // Nettoyer l'URL pour éviter un rechargement en boucle
     history.replaceState({},'',location.pathname);
+
     const file=new File([blob],name,{type:blob.type||'application/octet-stream'});
     showToast('📥 '+name+' reçu — chargement…');
     await addKMZLayer(file);
   }catch(e){
     console.warn('Shared file load failed:',e);
-    showToast('⚠ Impossible de charger le fichier partagé');
+    showToast('⚠ Erreur chargement partagé: '+(e&&e.message?e.message:e),7000);
+  }finally{
+    _sharedLoading=false;
   }
 }
 
 // Au démarrage : si on arrive via un partage, charger le fichier
 document.addEventListener('DOMContentLoaded',()=>{
   if(new URLSearchParams(location.search).get('shared')==='1'){
-    // Attendre que la carte soit prête avant de charger le KMZ
-    setTimeout(loadSharedFile,600);
+    setTimeout(loadSharedFile,300);
   }
 });
+
+// Diagnostic manuel : tapez shareDebug() dans la console
+window.shareDebug=async function(){
+  const dbg=await readShareDebug();
+  console.log('=== DIAGNOSTIC PARTAGE ===');
+  console.log(dbg||'Aucune trace — le service worker n\'a jamais reçu de partage');
+  const cache=await caches.open('lp-report-v1');
+  const f=await cache.match(SHARE_KEY);
+  console.log('Fichier en attente:',f?'OUI':'non');
+  return dbg;
+};
 </script>
 </body>
 </html>
