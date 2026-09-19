@@ -2564,6 +2564,45 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(state.map)state.map.invalidateSize();
   }));
 });
+
+// ── SERVICE WORKER + PARTAGE WHATSAPP ───────────────────────────────────────
+const SHARE_KEY='/__shared-kmz__';
+
+// Enregistrement du service worker (requis pour l'installation Android)
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js')
+      .catch(e=>console.warn('SW registration failed:',e));
+  });
+}
+
+// Récupération d'un fichier partagé depuis WhatsApp (ou autre app)
+async function loadSharedFile(){
+  try{
+    const cache=await caches.open('lp-report-v1');
+    const res=await cache.match(SHARE_KEY);
+    if(!res)return;
+    const blob=await res.blob();
+    const name=decodeURIComponent(res.headers.get('X-Filename')||'shared.kmz');
+    await cache.delete(SHARE_KEY);
+    // Nettoyer l'URL pour éviter un rechargement en boucle
+    history.replaceState({},'',location.pathname);
+    const file=new File([blob],name,{type:blob.type||'application/octet-stream'});
+    showToast('📥 '+name+' reçu — chargement…');
+    await addKMZLayer(file);
+  }catch(e){
+    console.warn('Shared file load failed:',e);
+    showToast('⚠ Impossible de charger le fichier partagé');
+  }
+}
+
+// Au démarrage : si on arrive via un partage, charger le fichier
+document.addEventListener('DOMContentLoaded',()=>{
+  if(new URLSearchParams(location.search).get('shared')==='1'){
+    // Attendre que la carte soit prête avant de charger le KMZ
+    setTimeout(loadSharedFile,600);
+  }
+});
 </script>
 </body>
 </html>
