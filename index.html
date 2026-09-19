@@ -2614,9 +2614,22 @@ async function loadSharedFile(){
     if(!res){
       const dbg=await readShareDebug();
       console.warn('[Partage] Aucun fichier en cache. Diagnostic:',dbg);
-      if(dbg&&dbg.error)showToast('⚠ Partage: '+dbg.error,7000);
-      else if(dbg&&dbg.fields&&dbg.fields.length)showToast('⚠ Partage reçu mais fichier illisible',7000);
-      else showToast('⚠ Le partage n\'a pas atteint l\'application',7000);
+      // Diagnostic visible sur mobile (alert bloquante, impossible à rater)
+      let msg='DIAGNOSTIC PARTAGE\n\n';
+      if(!dbg){
+        msg+='Le service worker n\'a JAMAIS reçu le partage.\n\n';
+        msg+='SW actif : '+(navigator.serviceWorker&&navigator.serviceWorker.controller?'oui':'NON')+'\n';
+        msg+='URL : '+location.href;
+      }else{
+        msg+='POST reçu sur : '+(dbg.path||'?')+'\n';
+        msg+='Fichier stocké : '+(dbg.stored?'OUI':'NON')+'\n';
+        if(dbg.error)msg+='Erreur : '+dbg.error+'\n';
+        msg+='\nChamps reçus ('+(dbg.fields?dbg.fields.length:0)+') :\n';
+        (dbg.fields||[]).forEach(f=>{
+          msg+='  • '+f.key+' — '+f.type+(f.name?' — '+f.name:'')+(f.size!==undefined?' — '+f.size+' o':'')+'\n';
+        });
+      }
+      alert(msg);
       history.replaceState({},'',location.pathname);
       return;
     }
