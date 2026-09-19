@@ -43,13 +43,18 @@
     "method": "POST",
     "enctype": "multipart/form-data",
     "params": {
-      "title": "title",
-      "text": "text",
       "files": [
         {
           "name": "kmzfile",
           "accept": [
-            "*/*"
+            "application/vnd.google-earth.kmz",
+            "application/vnd.google-earth.kml+xml",
+            "application/octet-stream",
+            "application/zip",
+            "application/xml",
+            "text/xml",
+            ".kmz",
+            ".kml"
           ]
         }
       ]
