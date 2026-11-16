@@ -1086,9 +1086,25 @@ async function addKMZLayer(file, _kmlTextOverride=null, _meta=null){
   let kmlText=_kmlTextOverride||null;
   if(!kmlText){
     try{
-      if(name.toLowerCase().endsWith('.kml'))kmlText=await file.text();
-      else if(name.toLowerCase().endsWith('.kmz')){const zip=await JSZip.loadAsync(file);const kmlFiles=zip.file(/\.kml$/i);if(!kmlFiles.length){showToast('No KML in KMZ');return;}kmlText=await(zip.file(/doc\.kml$/i)[0]||kmlFiles[0]).async('string');}
-      else{showToast('⚠ '+name+' — choisissez un fichier .kmz ou .kml',6000);return;}
+      // Détection par le CONTENU, pas par l'extension : Android masque ou
+      // supprime souvent l'extension (Drive, WhatsApp, gestionnaire de fichiers).
+      const sig=new Uint8Array(await file.slice(0,4).arrayBuffer());
+      const isZip=sig[0]===0x50&&sig[1]===0x4B&&(sig[2]===0x03||sig[2]===0x05||sig[2]===0x07);
+      if(isZip){
+        // Archive ZIP → c'est un KMZ
+        const zip=await JSZip.loadAsync(file);
+        const kmlFiles=zip.file(/\.kml$/i);
+        if(!kmlFiles.length){showToast('⚠ '+name+' — archive sans fichier KML dedans',6000);return;}
+        kmlText=await(zip.file(/doc\.kml$/i)[0]||kmlFiles[0]).async('string');
+      } else {
+        // Sinon on tente le texte : un KML est du XML
+        const txt=await file.text();
+        if(/<kml[\s>]/i.test(txt)||/<\?xml/i.test(txt)&&/<Placemark[\s>]/i.test(txt)){
+          kmlText=txt;
+        } else {
+          showToast('⚠ '+name+' — ce fichier n\'est ni un KMZ ni un KML',6000);return;
+        }
+      }
     }catch(e){showToast('Error: '+e.message);return;}
   }
   if(!kmlText?.trim()){showToast('Empty KML file');return;}
